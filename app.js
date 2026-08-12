@@ -608,7 +608,7 @@
         statItem("平均分", stats.completed ? stats.avg : "—") +
         statItem("达成目标", stats.targetHits) +
       "</div>" +
-      '<div class="card">' +
+      '<div class="card add-test-card">' +
         '<div class="card-head"><h3>添加模拟卷</h3></div>' +
         '<form class="form-grid" onsubmit="return App.addTest(event)">' +
           '<div class="field full"><label>测试名称</label><input id="test-name" class="input" maxlength="80" required></div>' +
@@ -621,7 +621,7 @@
           '<button class="btn primary" type="submit">添加模拟卷</button>' +
         "</form>" +
       "</div>" +
-      '<div class="card">' +
+      '<div class="card generate-test-card">' +
         '<div class="card-head"><h3>自动生成模拟卷</h3></div>' +
         '<form class="form-grid" onsubmit="return App.generateMockTest(event)">' +
           '<div class="field"><label>科目</label><select id="gen-subject" class="select">' + subjectOptions() + "</select></div>" +
