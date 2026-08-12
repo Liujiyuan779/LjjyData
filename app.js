@@ -608,19 +608,6 @@
         statItem("平均分", stats.completed ? stats.avg : "—") +
         statItem("达成目标", stats.targetHits) +
       "</div>" +
-      '<div class="card add-test-card">' +
-        '<div class="card-head"><h3>添加模拟卷</h3></div>' +
-        '<form class="form-grid" onsubmit="return App.addTest(event)">' +
-          '<div class="field full"><label>测试名称</label><input id="test-name" class="input" maxlength="80" required></div>' +
-          '<div class="field"><label>科目</label><select id="test-subject" class="select">' + subjectOptions() + "</select></div>" +
-          '<div class="field"><label>考试日期</label><input id="test-date" type="date" class="input" value="' + Core.addDaysISO(Core.todayISO(), 7) + '" required></div>' +
-          '<div class="field"><label>时长（分钟）</label><input id="test-duration" type="number" class="input" min="1" max="600" value="120" required></div>' +
-          '<div class="field"><label>满分</label><input id="test-total" type="number" class="input" min="1" value="100" required></div>' +
-          '<div class="field"><label>目标分</label><input id="test-target" type="number" class="input" min="0" value="70" required></div>' +
-          '<div class="field full"><label>备注</label><input id="test-notes" class="input" maxlength="120"></div>' +
-          '<button class="btn primary" type="submit">添加模拟卷</button>' +
-        "</form>" +
-      "</div>" +
       '<div class="card generate-test-card">' +
         '<div class="card-head"><h3>自动生成模拟卷</h3></div>' +
         '<form class="form-grid" onsubmit="return App.generateMockTest(event)">' +
@@ -848,27 +835,6 @@
       clearInterval(testTimerInterval);
       testTimerInterval = null;
     }
-  }
-
-  function addTest(event) {
-    event.preventDefault();
-    const name = document.getElementById("test-name").value.trim();
-    if (!name) {
-      toast("请输入测试名称");
-      return;
-    }
-    const test = Core.createTest({
-      name: name,
-      subjectId: document.getElementById("test-subject").value,
-      date: document.getElementById("test-date").value,
-      duration: Number(document.getElementById("test-duration").value),
-      total: Number(document.getElementById("test-total").value),
-      target: Number(document.getElementById("test-target").value),
-      notes: document.getElementById("test-notes").value.trim()
-    });
-    state.tests.push(test);
-    commit();
-    toast("模拟卷已添加");
   }
 
   function startTest(id) {
@@ -1684,7 +1650,6 @@
     addSubjectRow: addSubjectRow,
     addWrong: addWrong,
     addResource: addResource,
-    addTest: addTest,
     addPlan: addPlan,
     addMemo: addMemo,
     backupNow: backupNow,

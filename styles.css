@@ -819,10 +819,6 @@ textarea:focus-visible {
   background: #fbfcff;
 }
 
-.add-test-card {
-  border-left: 4px solid var(--accent);
-}
-
 .generate-test-card {
   border-left: 4px solid var(--warning);
   background: #fffdf8;

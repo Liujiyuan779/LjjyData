@@ -50,12 +50,6 @@ try {
   if ($dom -notmatch 'id="plan-title"') {
     throw "Plan view was not rendered"
   }
-  if ($dom -notmatch 'id="test-name"') {
-    throw "Tests view was not rendered"
-  }
-  if ($dom -notmatch 'add-test-card') {
-    throw "Add test card style was not rendered"
-  }
   if ($dom -notmatch 'generate-test-card') {
     throw "Generate test card style was not rendered"
   }
