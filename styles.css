@@ -814,6 +814,11 @@ textarea:focus-visible {
   accent-color: var(--accent);
 }
 
+.search-card {
+  border-left: 4px solid var(--info);
+  background: #fbfcff;
+}
+
 .hidden {
   display: none !important;
 }

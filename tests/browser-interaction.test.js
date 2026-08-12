@@ -184,6 +184,27 @@ async function main() {
   assert(savedAfterGenerate.indexOf('"generated": true') >= 0, "Generated test should be saved");
   assert(savedAfterGenerate.indexOf('"questions":') >= 0, "Generated test should contain questions");
 
+  const labelsAfterGenerate = await evaluate(
+    "Array.from(document.querySelectorAll('.card')).map(function(card){" +
+    "var h=card.querySelector('h3'); return h?h.textContent:'';}).join('|')"
+  );
+  const autoCardLabels = await evaluate(
+    "(function(){" +
+    "var card=Array.from(document.querySelectorAll('.card')).find(function(c){return c.textContent.indexOf('自动生成模拟卷')>=0;});" +
+    "return card?Array.from(card.querySelectorAll('label')).map(function(l){return l.textContent.trim();}).join(','):'';" +
+    "})()"
+  );
+  assert(autoCardLabels.indexOf("题目数量") >= 0, "Auto generate form should keep question count field");
+  assert(labelsAfterGenerate.indexOf("联网搜索真题") >= 0, "Search card should stay separate");
+  assert(
+    await evaluate("document.getElementById('gen-count').value === '3'"),
+    "Question count input should keep its value"
+  );
+  assert(
+    await evaluate("document.getElementById('search-keyword').value === '真题 下载'"),
+    "Search keyword input should stay in its own card"
+  );
+
   await evaluate(
     "document.getElementById('import-questions').value=" +
     "'科目：数学\\n年份：2024\\n题型：单选\\n题干：Q\\n选项A：a\\n选项B：b\\n答案：B\\n解析：x';" +
