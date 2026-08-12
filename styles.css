@@ -786,6 +786,34 @@ textarea:focus-visible {
   overflow-wrap: anywhere;
 }
 
+.answer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.answer-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  background: #fff;
+}
+
+.answer-option:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.answer-option input {
+  margin-top: 2px;
+  accent-color: var(--accent);
+}
+
 .hidden {
   display: none !important;
 }

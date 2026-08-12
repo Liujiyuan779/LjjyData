@@ -19,6 +19,12 @@ if ($LASTEXITCODE -ne 0) {
   throw "app.js syntax check failed"
 }
 
+Write-Host "== Checking questionBank.js syntax =="
+& node --check (Join-Path $root "questionBank.js")
+if ($LASTEXITCODE -ne 0) {
+  throw "questionBank.js syntax check failed"
+}
+
 Write-Host "== Running shell tests =="
 & node (Join-Path $PSScriptRoot "shell.test.js")
 if ($LASTEXITCODE -ne 0) {

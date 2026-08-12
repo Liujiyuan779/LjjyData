@@ -477,6 +477,209 @@
     return state;
   }
 
+  function resolveSubjectId(value) {
+    const map = {
+      "政治": "politics",
+      "英语": "english",
+      "数学": "math",
+      "专业课": "major"
+    };
+    if (map[value]) return map[value];
+    return String(value || "");
+  }
+
+  function normalizeQuestion(q, sourceLabel) {
+    return {
+      id: q.id || uid(),
+      year: String(q.year || ""),
+      subjectId: resolveSubjectId(q.subjectId || ""),
+      type: q.type || "其他",
+      question: q.question || "",
+      options: Array.isArray(q.options) && q.options.length ? q.options.slice() : null,
+      answer: q.answer || "",
+      analysis: q.analysis || "",
+      source: q.source || sourceLabel || "导入题库",
+      userAnswer: q.userAnswer != null ? q.userAnswer : null
+    };
+  }
+
+  function pickQuestions(bank, filter, count) {
+    const subjectId = filter.subjectId || "all";
+    const year = filter.year || "all";
+    const filtered = (bank || []).filter(function (q) {
+      const matchSubject = subjectId === "all" || q.subjectId === subjectId;
+      const matchYear = year === "all" || String(q.year) === String(year);
+      return matchSubject && matchYear;
+    }).sort(function (a, b) {
+      return String(b.year).localeCompare(String(a.year)) || String(a.id).localeCompare(String(b.id));
+    });
+    const limit = Math.max(0, Math.min(Number(count) || filtered.length, filtered.length));
+    return filtered.slice(0, limit);
+  }
+
+  function createGeneratedTest(state, options) {
+    const selected = options.questions || pickQuestions(options.bank || [], {
+      subjectId: options.subjectId,
+      year: options.year
+    }, options.count);
+    if (!selected.length) {
+      throw new Error("没有可用题目");
+    }
+    const questions = selected.map(function (q) {
+      return normalizeQuestion(q, options.sourceLabel);
+    });
+    const subject = state.subjects.find(function (s) {
+      return s.id === options.subjectId;
+    });
+    const yearText = options.year && options.year !== "all" ? options.year + "年 " : "";
+    return {
+      id: uid(),
+      name: options.name || yearText + (subject ? subject.name : "科目") + "模拟卷",
+      subjectId: options.subjectId || "",
+      date: options.date || addDaysISO(todayISO(), 1),
+      duration: Number(options.duration) || 120,
+      total: questions.length,
+      target: Math.max(1, Math.round(questions.length * 0.6)),
+      score: null,
+      status: "planned",
+      notes: options.notes || "",
+      createdAt: nowISO(),
+      completedAt: null,
+      generated: true,
+      sourceLabel: options.sourceLabel || "自动组卷",
+      questions: questions
+    };
+  }
+
+  function parseQuestionText(text) {
+    const blocks = String(text || "").split(/\n\s*\n+/).map(function (b) {
+      return b.trim();
+    }).filter(Boolean);
+    const questions = [];
+    const errors = [];
+
+    blocks.forEach(function (block, index) {
+      const obj = {};
+      let currentKey = null;
+      const currentLines = [];
+
+      function flush() {
+        if (currentKey) {
+          const joined = currentLines.join("\n").trim();
+          obj[currentKey] = obj[currentKey] ? obj[currentKey] + "\n" + joined : joined;
+        }
+        currentLines.length = 0;
+      }
+
+      block.split("\n").forEach(function (line) {
+        const m = line.match(/^\s*(科目|年份|题型|题干|选项A|选项B|选项C|选项D|答案|解析|来源)\s*[：:]\s*(.*)$/);
+        if (m) {
+          flush();
+          currentKey = m[1];
+          currentLines.push(m[2].trim());
+        } else {
+          currentLines.push(line.trim());
+        }
+      });
+      flush();
+
+      const questionText = obj["题干"] || "";
+      if (!questionText) {
+        errors.push("第 " + (index + 1) + " 题缺少题干");
+        return;
+      }
+      const options = ["A", "B", "C", "D"].map(function (key) {
+        return obj["选项" + key];
+      }).filter(Boolean);
+      questions.push(normalizeQuestion({
+        year: obj["年份"] || "",
+        subjectId: resolveSubjectId(obj["科目"] || ""),
+        type: obj["题型"] || "其他",
+        question: questionText,
+        options: options.length ? options : null,
+        answer: obj["答案"] || "",
+        analysis: obj["解析"] || "",
+        source: obj["来源"] || "导入题库"
+      }, "导入题库"));
+    });
+
+    return { ok: !errors.length, questions: questions, errors: errors };
+  }
+
+  function parseQuestionJson(text) {
+    const data = JSON.parse(text);
+    const list = Array.isArray(data) ? data : (data.questions || []);
+    if (!Array.isArray(list)) {
+      throw new Error("JSON 中缺少 questions 数组");
+    }
+    return {
+      ok: true,
+      questions: list.map(function (q) {
+        return normalizeQuestion(q, "导入题库");
+      }),
+      errors: []
+    };
+  }
+
+  function markUserAnswer(state, testId, questionId, answer) {
+    const test = state.tests.find(function (t) {
+      return t.id === testId;
+    });
+    if (test && test.questions) {
+      const question = test.questions.find(function (q) {
+        return q.id === questionId;
+      });
+      if (question) {
+        question.userAnswer = answer;
+      }
+    }
+    return state;
+  }
+
+  function gradeGeneratedTest(test) {
+    const questions = test.questions || [];
+    const objective = questions.filter(function (q) {
+      return q.options && q.options.length;
+    });
+    let correct = 0;
+    const results = questions.map(function (q) {
+      let isCorrect = null;
+      if (q.options && q.options.length) {
+        const user = String(q.userAnswer || "").trim().toUpperCase();
+        const answer = String(q.answer || "").trim().toUpperCase();
+        isCorrect = user === answer;
+        if (isCorrect) correct += 1;
+      }
+      return {
+        question: q,
+        isCorrect: isCorrect,
+        answered: !!q.userAnswer
+      };
+    });
+    return {
+      score: correct,
+      total: questions.length,
+      objectiveTotal: objective.length,
+      correct: correct,
+      results: results
+    };
+  }
+
+  function completeGeneratedTest(state, testId) {
+    const test = state.tests.find(function (t) {
+      return t.id === testId;
+    });
+    if (!test) return state;
+    const grade = gradeGeneratedTest(test);
+    test.score = grade.score;
+    test.total = test.questions.length;
+    test.status = "done";
+    test.completedAt = nowISO();
+    const note = "自动判分：客观题得分 " + grade.score + " / " + grade.objectiveTotal + "，主观题请自行核对。";
+    test.notes = test.notes ? test.notes + "；" + note : note;
+    return state;
+  }
+
   function formatClock(totalSeconds) {
     const seconds = Math.max(0, Math.floor(Number(totalSeconds) || 0));
     const h = Math.floor(seconds / 3600);
@@ -583,7 +786,9 @@
     addDaysISO: addDaysISO,
     backupManifest: backupManifest,
     applyWrongReview: applyWrongReview,
+    completeGeneratedTest: completeGeneratedTest,
     completeTest: completeTest,
+    createGeneratedTest: createGeneratedTest,
     createWrongQuestion: createWrongQuestion,
     createResource: createResource,
     createTest: createTest,
@@ -595,10 +800,16 @@
     formatClock: formatClock,
     formatDateCN: formatDateCN,
     filterWrongQuestions: filterWrongQuestions,
+    gradeGeneratedTest: gradeGeneratedTest,
     homeDigest: homeDigest,
+    markUserAnswer: markUserAnswer,
     mergeState: mergeState,
+    normalizeQuestion: normalizeQuestion,
     nowISO: nowISO,
+    parseQuestionJson: parseQuestionJson,
+    parseQuestionText: parseQuestionText,
     parseState: parseState,
+    pickQuestions: pickQuestions,
     planSummary: planSummary,
     removePlan: removePlan,
     removeResource: removeResource,

@@ -262,6 +262,92 @@ test("updateSettings 更新设置和科目", function () {
   assert.ok(state.subjects[1].id);
 });
 
+test("pickQuestions 按科目和年份筛选", function () {
+  const bank = [
+    { id: "a", year: "2024", subjectId: "math" },
+    { id: "b", year: "2025", subjectId: "math" },
+    { id: "c", year: "2024", subjectId: "english" }
+  ];
+  const picked = Core.pickQuestions(bank, { subjectId: "math", year: "2024" }, 1);
+  assert.strictEqual(picked.length, 1);
+  assert.strictEqual(picked[0].id, "a");
+});
+
+test("createGeneratedTest 自动组卷并带题目", function () {
+  const state = Core.defaultState("2026-08-12");
+  const test = Core.createGeneratedTest(state, {
+    subjectId: "math",
+    year: "2024",
+    bank: [
+      { id: "q1", year: "2024", subjectId: "math", type: "单选", question: "Q1", options: ["A. a", "B. b"], answer: "A" }
+    ],
+    sourceLabel: "示例题库"
+  });
+  assert.strictEqual(test.generated, true);
+  assert.strictEqual(test.questions.length, 1);
+  assert.strictEqual(test.status, "planned");
+});
+
+test("parseQuestionText 解析带选项的导入文本", function () {
+  const text = [
+    "科目：数学",
+    "年份：2024",
+    "题型：单选",
+    "题干：求 1+1",
+    "选项A：1",
+    "选项B：2",
+    "答案：B",
+    "解析：1+1=2",
+    "",
+    "科目：英语",
+    "题型：填空",
+    "题干：The sky is ____.",
+    "答案：blue",
+    "解析：天空是蓝色的。"
+  ].join("\n");
+  const result = Core.parseQuestionText(text);
+  assert.strictEqual(result.ok, true);
+  assert.strictEqual(result.questions.length, 2);
+  assert.strictEqual(result.questions[0].subjectId, "math");
+  assert.deepStrictEqual(result.questions[0].options, ["1", "2"]);
+});
+
+test("parseQuestionJson 解析 JSON 题库", function () {
+  const result = Core.parseQuestionJson(JSON.stringify({
+    questions: [
+      { year: "2025", subjectId: "english", question: "Q", options: ["A. a", "B. b"], answer: "A" }
+    ]
+  }));
+  assert.strictEqual(result.ok, true);
+  assert.strictEqual(result.questions.length, 1);
+  assert.strictEqual(result.questions[0].source, "导入题库");
+});
+
+test("markUserAnswer、gradeGeneratedTest、completeGeneratedTest 自动判分", function () {
+  const state = Core.defaultState("2026-08-12");
+  const test = Core.createGeneratedTest(state, {
+    subjectId: "math",
+    bank: [
+      { id: "q1", year: "2024", subjectId: "math", type: "单选", question: "Q1", options: ["A. a", "B. b"], answer: "A" },
+      { id: "q2", year: "2024", subjectId: "math", type: "单选", question: "Q2", options: ["A. a", "B. b"], answer: "B" },
+      { id: "q3", year: "2024", subjectId: "math", type: "解答", question: "主观题", options: null, answer: "自行核对" }
+    ]
+  });
+  state.tests.push(test);
+  Core.markUserAnswer(state, test.id, test.questions[0].id, "A");
+  Core.markUserAnswer(state, test.id, test.questions[1].id, "A");
+  const grade = Core.gradeGeneratedTest(test);
+  assert.strictEqual(grade.objectiveTotal, 2);
+  assert.strictEqual(grade.correct, 1);
+  assert.strictEqual(grade.score, 1);
+  Core.completeGeneratedTest(state, test.id);
+  const updated = state.tests.find(function (t) {
+    return t.id === test.id;
+  });
+  assert.strictEqual(updated.status, "done");
+  assert.strictEqual(updated.score, 1);
+});
+
 if (failed) {
   process.exit(1);
 }

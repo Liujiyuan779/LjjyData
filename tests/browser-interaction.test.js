@@ -173,6 +173,26 @@ async function main() {
     "Fallback storage should be written"
   );
 
+  await evaluate(
+    "document.getElementById('gen-subject').value='math';" +
+    "document.getElementById('gen-year').value='2024';" +
+    "document.getElementById('gen-count').value='2';" +
+    "App.generateMockTest({preventDefault:function(){}});"
+  );
+  await sleep(500);
+  const savedAfterGenerate = await evaluate("localStorage.getItem('kaoyan_app_local_fallback_v1') || ''");
+  assert(savedAfterGenerate.indexOf('"generated": true') >= 0, "Generated test should be saved");
+  assert(savedAfterGenerate.indexOf('"questions":') >= 0, "Generated test should contain questions");
+
+  await evaluate(
+    "document.getElementById('import-questions').value=" +
+    "'科目：数学\\n年份：2024\\n题型：单选\\n题干：Q\\n选项A：a\\n选项B：b\\n答案：B\\n解析：x';" +
+    "App.importMockTest({preventDefault:function(){}});"
+  );
+  await sleep(500);
+  const savedAfterImport = await evaluate("localStorage.getItem('kaoyan_app_local_fallback_v1') || ''");
+  assert(savedAfterImport.indexOf("导入真题模拟卷") >= 0, "Imported test should be saved");
+
   console.log("PASS browser interaction test");
 }
 

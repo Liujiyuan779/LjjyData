@@ -53,6 +53,12 @@ try {
   if ($dom -notmatch 'id="test-name"') {
     throw "Tests view was not rendered"
   }
+  if ($dom -notmatch 'id="gen-subject"') {
+    throw "Generated test form was not rendered"
+  }
+  if ($dom -notmatch 'id="import-questions"') {
+    throw "Question import form was not rendered"
+  }
   if ($dom -notmatch 'id="resource-name"') {
     throw "Resources view was not rendered"
   }

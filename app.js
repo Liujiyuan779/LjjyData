@@ -3,6 +3,7 @@
 
   const Core = window.KaoYanCore;
   const Storage = window.KaoYanStorage;
+  const QuestionBank = window.KaoYanQuestionBank;
   const SAVE_KEY = "kaoyan_app_local_fallback_v1";
   const HANDLE_DB = "kaoyan_handle_db";
   const HANDLE_STORE = "handles";
@@ -17,6 +18,7 @@
   let testTimerInterval = null;
   let testRemaining = 0;
   let activeTestId = null;
+  let currentQuestionIndex = 0;
   let resourceQuery = "";
   let resourceSubjectFilter = "all";
   let resourceTypeFilter = "all";
@@ -323,19 +325,28 @@
         '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M4 8h16"/><path d="m9 13 2 2 4-5"/></svg>' +
       "</div>" +
       '<div class="test-main">' +
-        '<div class="test-name">' + esc(test.name) + "</div>" +
+        '<div class="test-name">' + esc(test.name) +
+          (test.generated
+            ? ' <span class="tag solid" style="background:var(--accent)">' + esc(test.sourceLabel || "自动组卷") + "</span>"
+            : "") +
+        "</div>" +
         '<div class="test-meta">' +
           (subject ? esc(subject.name) + " · " : "") +
           esc(Core.formatDateCN(test.date)) + " · " + test.duration + " 分钟 · 满分 " + test.total +
+          (test.questions ? " · " + test.questions.length + " 题" : "") +
         "</div>" +
         (test.notes ? '<div class="test-meta">' + esc(test.notes) + "</div>" : "") +
       "</div>" +
       '<div class="test-actions">' +
         (test.status === "planned"
-          ? '<button class="btn primary" onclick="App.startTest(\'' + test.id + '\')">开始模拟</button>'
+          ? '<button class="btn primary" onclick="App.startTest(\'' + test.id + '\')">' +
+            (test.questions ? "开始答题" : "开始模拟") + "</button>"
           : '<div style="text-align:right">' +
               '<div class="score-badge">' + esc(String(test.score)) + '<span class="muted"> / ' + test.total + "</span></div>" +
               '<div class="score-line"><span>目标 ' + test.target + "</span><span>达成率 " + scoreRate(test) + "%</span></div>" +
+              (test.questions
+                ? '<button class="btn small" style="margin-top:6px" onclick="App.viewTestResult(\'' + test.id + '\')">查看结果</button>'
+                : "") +
             "</div>") +
         '<button class="icon-btn danger" onclick="App.deleteTest(\'' + test.id + '\')" title="删除">' +
           '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 15H6L5 6"/></svg>' +
@@ -606,6 +617,28 @@
           '<button class="btn primary" type="submit">添加模拟卷</button>' +
         "</form>" +
       "</div>" +
+      '<div class="card">' +
+        '<div class="card-head"><h3>自动生成模拟卷</h3></div>' +
+        '<form class="form-grid" onsubmit="return App.generateMockTest(event)">' +
+          '<div class="field"><label>科目</label><select id="gen-subject" class="select">' + subjectOptions() + "</select></div>" +
+          '<div class="field"><label>年份</label><select id="gen-year" class="select">' +
+            '<option value="all">近年全部</option>' +
+            QuestionBank.years.map(function (year) {
+              return '<option value="' + year + '">' + year + "年</option>";
+            }).join("") +
+          "</select></div>" +
+          '<div class="field"><label>题目数量</label><input id="gen-count" type="number" class="input" min="1" max="20" value="3"></div>' +
+          '<button class="btn primary" type="submit">生成模拟卷</button>' +
+        "</form>" +
+        '<div class="card-head" style="margin-top:18px"><h3>导入真题并生成</h3></div>' +
+        '<form class="form-grid" onsubmit="return App.importMockTest(event)">' +
+          '<div class="field full"><label>粘贴真题（题目之间空一行）</label>' +
+            '<textarea id="import-questions" class="textarea" placeholder="科目：数学&#10;年份：2024&#10;题型：单选&#10;题干：…&#10;选项A：…&#10;选项B：…&#10;答案：B&#10;解析：…"></textarea></div>' +
+          '<div class="field full"><label>或选择 .txt / .json 文件</label><input id="import-question-file" type="file" class="input" accept=".txt,.json"></div>' +
+          '<button class="btn primary" type="submit">导入并生成模拟卷</button>' +
+        "</form>" +
+        '<div class="muted" style="margin-top:8px">内置题库为示例整理版，已标注“非官方原题”；导入题支持上面的文本格式或 questions 数组 JSON。</div>' +
+      "</div>" +
       (planned.length
         ? '<div class="section-head"><h2 class="section-title">待考列表</h2></div><div class="list">' +
           planned.map(testRow).join("") + "</div>"
@@ -824,6 +857,10 @@
     if (!test) return;
     clearTestTimer();
     activeTestId = id;
+    if (test.questions && test.questions.length) {
+      startQuestionTest(test);
+      return;
+    }
     testRemaining = Number(test.duration) * 60;
     const subject = subjectById(test.subjectId);
     openModal(
@@ -892,6 +929,231 @@
     commit();
     closeModal();
     toast("成绩已保存");
+  }
+
+  function generateMockTest(event) {
+    event.preventDefault();
+    const subjectId = document.getElementById("gen-subject").value;
+    const year = document.getElementById("gen-year").value;
+    const count = Math.max(1, Number(document.getElementById("gen-count").value) || 3);
+    const subject = subjectById(subjectId);
+    const name = year === "all"
+      ? "近年真题模拟卷"
+      : year + "年" + (subject ? subject.name : "科目") + "真题模拟卷";
+    try {
+      const test = Core.createGeneratedTest(state, {
+        subjectId: subjectId,
+        year: year,
+        count: count,
+        bank: QuestionBank.bank,
+        sourceLabel: "示例题库自动组卷",
+        name: name
+      });
+      state.tests.push(test);
+      commit();
+      toast("模拟卷已生成：" + test.name);
+    } catch (err) {
+      toast(err.message);
+    }
+  }
+
+  async function importMockTest(event) {
+    event.preventDefault();
+    let text = document.getElementById("import-questions").value.trim();
+    const fileInput = document.getElementById("import-question-file");
+    let fileName = "";
+    if (fileInput && fileInput.files.length) {
+      fileName = fileInput.files[0].name;
+      text = await fileInput.files[0].text();
+    }
+    if (!text) {
+      toast("请粘贴题目或选择文件");
+      return;
+    }
+
+    let result;
+    if (fileName.toLowerCase().endsWith(".json") ||
+        text.trim().charAt(0) === "[" ||
+        text.trim().charAt(0) === "{") {
+      try {
+        result = Core.parseQuestionJson(text);
+      } catch (err) {
+        openModal("导入错误", '<p>JSON 解析失败：' + esc(err.message) + "</p>", true);
+        return;
+      }
+    } else {
+      result = Core.parseQuestionText(text);
+    }
+
+    if (result.errors && result.errors.length) {
+      openModal(
+        "导入错误",
+        "<ul>" + result.errors.map(function (e) {
+          return "<li>" + esc(e) + "</li>";
+        }).join("") + "</ul>",
+        true
+      );
+      return;
+    }
+    if (!result.questions.length) {
+      toast("没有解析到题目");
+      return;
+    }
+
+    const test = Core.createGeneratedTest(state, {
+      subjectId: result.questions[0].subjectId || "",
+      questions: result.questions,
+      sourceLabel: "导入真题",
+      name: "导入真题模拟卷（" + result.questions.length + " 题）"
+    });
+    state.tests.push(test);
+    commit();
+    toast("已导入并生成模拟卷");
+  }
+
+  function startQuestionTest(test) {
+    clearTestTimer();
+    activeTestId = test.id;
+    currentQuestionIndex = 0;
+    testRemaining = Number(test.duration) * 60;
+    openModal(
+      test.name,
+      '<div class="test-clock" id="test-clock">' + Core.formatClock(testRemaining) + "</div>" +
+        '<div id="question-body"></div>',
+      false
+    );
+    renderQuestionStep(test);
+    testTimerInterval = setInterval(function () {
+      testRemaining -= 1;
+      const clockEl = document.getElementById("test-clock");
+      if (clockEl) {
+        clockEl.textContent = Core.formatClock(testRemaining);
+      }
+      if (testRemaining <= 0) {
+        clearTestTimer();
+        finishQuestionTest();
+      }
+    }, 1000);
+  }
+
+  function renderQuestionStep(test) {
+    const body = document.getElementById("question-body");
+    if (!body) return;
+    const question = test.questions[currentQuestionIndex];
+    if (!question) {
+      body.innerHTML = "";
+      return;
+    }
+    const optionsHtml = question.options && question.options.length
+      ? question.options.map(function (option, index) {
+          const letter = String.fromCharCode(65 + index);
+          const selected = String(question.userAnswer || "").toUpperCase() === letter;
+          return '<label class="answer-option">' +
+            '<input type="radio" name="answer" value="' + letter + '"' + (selected ? " checked" : "") +
+              " onchange=\"App.answerQuestion('" + test.id + "','" + question.id + "',this.value)\">" +
+            "<span>" + esc(option) + "</span></label>";
+        }).join("")
+      : '<textarea id="subjective-answer" class="textarea" style="margin:10px 0" ' +
+          "onchange=\"App.answerQuestion('" + test.id + "','" + question.id + "',this.value)\">" +
+          esc(question.userAnswer || "") + "</textarea>";
+
+    body.innerHTML =
+      '<div class="muted">第 ' + (currentQuestionIndex + 1) + " / " + test.questions.length + " 题 · " +
+        esc(question.type) + (question.year ? " · " + esc(question.year) + "年" : "") + "</div>" +
+      '<div class="wrong-question" style="margin:10px 0">' + esc(question.question) + "</div>" +
+      (question.options && question.options.length
+        ? '<div class="answer-list">' + optionsHtml + "</div>"
+        : optionsHtml) +
+      '<div class="modal-actions">' +
+        (currentQuestionIndex > 0
+          ? '<button class="btn" onclick="App.prevQuestion()">上一题</button>'
+          : "") +
+        (currentQuestionIndex < test.questions.length - 1
+          ? '<button class="btn primary" onclick="App.nextQuestion()">下一题</button>'
+          : "") +
+        '<button class="btn danger" onclick="App.finishQuestionTest()">交卷</button>' +
+      "</div>";
+  }
+
+  function answerQuestion(testId, questionId, value) {
+    Core.markUserAnswer(state, testId, questionId, value);
+    commit();
+  }
+
+  function nextQuestion() {
+    const test = state.tests.find(function (t) {
+      return t.id === activeTestId;
+    });
+    if (test && currentQuestionIndex < test.questions.length - 1) {
+      currentQuestionIndex += 1;
+      renderQuestionStep(test);
+    }
+  }
+
+  function prevQuestion() {
+    if (currentQuestionIndex > 0) {
+      currentQuestionIndex -= 1;
+      const test = state.tests.find(function (t) {
+        return t.id === activeTestId;
+      });
+      if (test) renderQuestionStep(test);
+    }
+  }
+
+  function finishQuestionTest() {
+    clearTestTimer();
+    const test = state.tests.find(function (t) {
+      return t.id === activeTestId;
+    });
+    if (!test) {
+      closeModal();
+      return;
+    }
+    Core.completeGeneratedTest(state, test.id);
+    commit();
+    openModal("成绩与解析", renderResultHtml(test), true);
+  }
+
+  function viewTestResult(id) {
+    const test = state.tests.find(function (t) {
+      return t.id === id;
+    });
+    if (!test) return;
+    openModal("成绩与解析", renderResultHtml(test), true);
+  }
+
+  function renderResultHtml(test) {
+    const grade = Core.gradeGeneratedTest(test);
+    const rows = grade.results.map(function (item, index) {
+      const q = item.question;
+      const user = String(q.userAnswer || "").trim() || "未作答";
+      const status = item.isCorrect === null
+        ? '<span class="tag">主观题</span>'
+        : item.isCorrect
+          ? '<span class="tag solid" style="background:var(--accent)">正确</span>'
+          : '<span class="tag solid" style="background:var(--danger)">错误</span>';
+      return '<div class="wrong-card" style="margin-top:8px">' +
+        '<div class="wrong-top"><div class="wrong-tags">' +
+          '<span class="tag">' + esc(q.type) + "</span>" +
+          (q.year ? '<span class="tag">' + esc(q.year) + "年</span>" : "") +
+          status +
+        "</div></div>" +
+        '<div class="wrong-question">' + (index + 1) + ". " + esc(q.question) + "</div>" +
+        '<div class="answer-box"><b>你的答案：</b>' + esc(user) + "</div>" +
+        (q.options && q.options.length
+          ? '<div class="answer-box"><b>正确答案：</b>' + esc(q.answer) + "</div>"
+          : "") +
+        (q.analysis
+          ? '<div class="answer-box"><b>解析：</b>' + esc(q.analysis) + "</div>"
+          : "") +
+      "</div>";
+    }).join("");
+    return '<div class="stat-grid" style="margin-bottom:10px">' +
+      statItem("得分", grade.score) +
+      statItem("客观题", grade.correct + " / " + grade.objectiveTotal) +
+      statItem("总题数", grade.total) +
+      statItem("主观题", "自行核对") +
+    "</div>" + rows;
   }
 
   function deleteTest(id) {
@@ -1356,6 +1618,7 @@
   }
 
   window.KaoYanApp = {
+    answerQuestion: answerQuestion,
     addSubjectRow: addSubjectRow,
     addWrong: addWrong,
     addResource: addResource,
@@ -1373,10 +1636,15 @@
     deleteWrong: deleteWrong,
     deleteTest: deleteTest,
     finishTest: finishTest,
+    finishQuestionTest: finishQuestionTest,
+    generateMockTest: generateMockTest,
     gradeReview: gradeReview,
+    importMockTest: importMockTest,
+    nextQuestion: nextQuestion,
     openSettings: openSettings,
     openResource: openResource,
     openSetupModal: openSetupModal,
+    prevQuestion: prevQuestion,
     removeSubjectRow: removeSubjectRow,
     restoreFromFile: restoreFromFile,
     restoreFromFolder: restoreFromFolder,
@@ -1396,7 +1664,8 @@
     submitTestScore: submitTestScore,
     toggleWrongDetail: toggleWrongDetail,
     togglePlan: togglePlan,
-    useLocalFallback: useLocalFallback
+    useLocalFallback: useLocalFallback,
+    viewTestResult: viewTestResult
   };
   window.App = window.KaoYanApp;
 
