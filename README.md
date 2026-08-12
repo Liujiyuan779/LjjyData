@@ -24,3 +24,5 @@ npm run dist
 ## 从 GitHub 获取应用
 
 仓库配置了 GitHub Actions。推送 `v*` 标签后会自动构建 Windows 安装包并发布到 Releases 页面，别人可以直接下载安装程序，无需安装 Node.js 或执行任何命令。
+
+当前版本也直接包含在仓库中：下载项目压缩包后，运行 `release/KaoYanApp-Setup-1.0.0.exe` 即可安装使用。

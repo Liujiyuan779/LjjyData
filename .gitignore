@@ -4,3 +4,5 @@ dist/
 *.log
 null/
 缘的考研舱数据存放/
+
+!release/KaoYanApp-Setup-*.exe
