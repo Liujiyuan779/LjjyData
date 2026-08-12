@@ -23,4 +23,4 @@ npm run dist
 
 ## 从 GitHub 获取应用
 
-仓库配置了 GitHub Actions。推送 `v*` 标签后会由 GitHub 自动构建 Windows 安装包，并上传为 Actions 构建产物，可直接下载运行。
+仓库配置了 GitHub Actions。推送 `v*` 标签后会自动构建 Windows 安装包并发布到 Releases 页面，别人可以直接下载安装程序，无需安装 Node.js 或执行任何命令。

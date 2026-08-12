@@ -1,0 +1,214 @@
+{
+  "version": 1,
+  "updatedAt": "2026-08-12T06:53:41.842Z",
+  "settings": {
+    "examName": "2027 考研",
+    "examDate": "2026-12-19",
+    "userName": "缘",
+    "dailyGoal": 5,
+    "theme": "light"
+  },
+  "subjects": [
+    {
+      "id": "politics",
+      "name": "政治",
+      "color": "#c84a5a"
+    },
+    {
+      "id": "english",
+      "name": "英语",
+      "color": "#2f7fe0"
+    },
+    {
+      "id": "math",
+      "name": "数学",
+      "color": "#0f9f6e"
+    },
+    {
+      "id": "major",
+      "name": "专业课",
+      "color": "#a55bd4"
+    }
+  ],
+  "plans": [
+    {
+      "id": "371fd401-6149-408a-beaa-a01c30ff76da",
+      "title": "背英语单词 50 个",
+      "subjectId": "english",
+      "time": "08:00",
+      "priority": "high",
+      "date": "2026-08-12",
+      "done": false
+    },
+    {
+      "id": "4ce4320d-5a03-4194-b7de-76b29668ca29",
+      "title": "高数强化：导数应用 10 题",
+      "subjectId": "math",
+      "time": "09:30",
+      "priority": "high",
+      "date": "2026-08-12",
+      "done": false
+    },
+    {
+      "id": "4d96a7b5-2e89-4dbe-a87c-e4999a16c24a",
+      "title": "政治选择题 30 题",
+      "subjectId": "politics",
+      "time": "14:00",
+      "priority": "medium",
+      "date": "2026-08-12",
+      "done": false
+    },
+    {
+      "id": "a192053e-9324-4233-960e-0805c2e25615",
+      "title": "专业课框架整理 1 章",
+      "subjectId": "major",
+      "time": "19:30",
+      "priority": "medium",
+      "date": "2026-08-12",
+      "done": false
+    },
+    {
+      "id": "b952759b-d9bc-4d02-ab8e-3b612437f4b2",
+      "title": "高数",
+      "subjectId": "math",
+      "time": "16:55",
+      "priority": "medium",
+      "date": "2026-08-12",
+      "done": false
+    }
+  ],
+  "memos": [
+    {
+      "id": "6a4d47d7-6a5c-4b4f-8010-9c1244adffe5",
+      "text": "明天 8 点前完成英语阅读 2 篇",
+      "createdAt": "2026-08-12T06:52:39.643Z"
+    }
+  ],
+  "tests": [
+    {
+      "id": "13958189-9abb-4f12-b47f-f3273ec82768",
+      "name": "英语阅读限时训练",
+      "subjectId": "english",
+      "date": "2026-08-15",
+      "duration": 90,
+      "total": 100,
+      "target": 70,
+      "score": null,
+      "status": "planned",
+      "notes": "",
+      "createdAt": "2026-08-12T06:52:39.643Z",
+      "completedAt": null
+    },
+    {
+      "id": "9dab6291-74ab-4455-974c-bd25a6ca3dea",
+      "name": "2026 数学真题（一）",
+      "subjectId": "math",
+      "date": "2026-08-19",
+      "duration": 180,
+      "total": 150,
+      "target": 120,
+      "score": null,
+      "status": "planned",
+      "notes": "",
+      "createdAt": "2026-08-12T06:52:39.643Z",
+      "completedAt": null
+    },
+    {
+      "id": "f1d03ec4-b24a-45db-87d5-4f96ba60c75b",
+      "name": "近年真题模拟卷",
+      "subjectId": "math",
+      "date": "2026-08-13",
+      "duration": 120,
+      "total": 2,
+      "target": 1,
+      "score": null,
+      "status": "planned",
+      "notes": "",
+      "createdAt": "2026-08-12T06:53:29.218Z",
+      "completedAt": null,
+      "generated": true,
+      "sourceLabel": "示例题库自动组卷",
+      "questions": [
+        {
+          "id": "math-2025-1",
+          "year": "2025",
+          "subjectId": "math",
+          "type": "单选",
+          "question": "设函数 f(x)=x³-3x，则 f(x) 在区间 [-2,2] 上的最小值为？",
+          "options": [
+            "A. -2",
+            "B. 2",
+            "C. -1",
+            "D. 0"
+          ],
+          "answer": "A",
+          "analysis": "f'(x)=3x²-3，极值点为 x=±1，比较端点与极值点可得最小值为 -2。",
+          "source": "示例题库（非官方原题）",
+          "userAnswer": null
+        },
+        {
+          "id": "math-2024-1",
+          "year": "2024",
+          "subjectId": "math",
+          "type": "填空",
+          "question": "lim(x→0) (1-cos x)/x² = ____.",
+          "options": null,
+          "answer": "1/2",
+          "analysis": "等价无穷小：1-cos x ~ x²/2。",
+          "source": "示例题库（非官方原题）",
+          "userAnswer": null
+        }
+      ]
+    }
+  ],
+  "resources": [
+    {
+      "id": "740e7cec-67a4-4dcc-8cbe-33227e9b4fd4",
+      "name": "英语近十年真题解析",
+      "subjectId": "english",
+      "type": "真题",
+      "tags": "阅读",
+      "fileId": null,
+      "size": 0,
+      "createdAt": "2026-08-12T06:52:39.643Z"
+    }
+  ],
+  "wrongQuestions": [
+    {
+      "id": "fb64c6cb-f91a-4690-92c9-1014cfa19c08",
+      "subjectId": "english",
+      "source": "2024 英语阅读 Text 1",
+      "difficulty": 3,
+      "question": "作者对这项政策的态度是？",
+      "myAnswer": "supportive",
+      "correctAnswer": "skeptical",
+      "analysis": "文中转折处表达了保留态度。",
+      "tags": "态度题",
+      "status": "todo",
+      "dueDate": "2026-08-12",
+      "interval": 1,
+      "ease": 2.5,
+      "reviews": 0,
+      "createdAt": "2026-08-12T06:52:39.643Z",
+      "lastReviewedAt": null
+    },
+    {
+      "id": "c10bd4c4-8aa6-494c-b29b-f7f5185c1295",
+      "subjectId": "math",
+      "source": "强化习题 第三章",
+      "difficulty": 4,
+      "question": "求极限：lim(x→0) (1-cos x)/x²",
+      "myAnswer": "1",
+      "correctAnswer": "1/2",
+      "analysis": "等价无穷小：1-cos x ~ x²/2。",
+      "tags": "极限",
+      "status": "reviewing",
+      "dueDate": "2026-08-12",
+      "interval": 2,
+      "ease": 2.5,
+      "reviews": 1,
+      "createdAt": "2026-08-12T06:52:39.643Z",
+      "lastReviewedAt": "2026-08-12T06:52:39.643Z"
+    }
+  ]
+}
