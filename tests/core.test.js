@@ -26,6 +26,7 @@ test("日期工具：addDaysISO 和 daysUntil", function () {
 test("默认状态结构完整", function () {
   const s = Core.defaultState("2026-08-12");
   assert.strictEqual(s.version, 1);
+  assert.strictEqual(s.settings.theme, "light");
   assert.ok(Array.isArray(s.plans));
   assert.ok(Array.isArray(s.tests));
   assert.ok(Array.isArray(s.resources));
@@ -272,12 +273,13 @@ test("createWrongQuestion、removeWrongQuestion、applyWrongReview 操作错题"
 
 test("updateSettings 更新设置和科目", function () {
   const state = { settings: { examDate: "2026-12-19" }, subjects: [] };
-  Core.updateSettings(state, { examDate: "2027-01-01", dailyGoal: 6 }, [
+  Core.updateSettings(state, { examDate: "2027-01-01", dailyGoal: 6, theme: "dark" }, [
     { id: "a", name: "政治", color: "#ff0000" },
     { name: "英语", color: "bad-color" }
   ]);
   assert.strictEqual(state.settings.examDate, "2027-01-01");
   assert.strictEqual(state.settings.dailyGoal, 6);
+  assert.strictEqual(state.settings.theme, "dark");
   assert.strictEqual(state.subjects.length, 2);
   assert.strictEqual(state.subjects[0].name, "政治");
   assert.strictEqual(state.subjects[1].color, "#0f8f79");

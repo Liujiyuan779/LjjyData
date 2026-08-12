@@ -73,7 +73,8 @@
         examName: "2027 考研",
         examDate: "2026-12-19",
         userName: "缘",
-        dailyGoal: 5
+        dailyGoal: 5,
+        theme: "light"
       },
       subjects: defaultSubjects(),
       plans: [

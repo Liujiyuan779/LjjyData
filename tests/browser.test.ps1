@@ -65,6 +65,9 @@ try {
   if ($dom -notmatch 'id="search-keyword"') {
     throw "Online search keyword input was not rendered"
   }
+  if ($dom -notmatch 'id="theme-toggle"') {
+    throw "Theme toggle button was not rendered"
+  }
   if ($dom -notmatch 'id="resource-name"') {
     throw "Resources view was not rendered"
   }
