@@ -144,6 +144,10 @@
   }
 
   async function saveHandle(handle) {
+    if (Storage.isElectronMode()) {
+      localStorage.setItem("kaoyan_electron_data_dir", String(handle));
+      return;
+    }
     const db = await openHandleDb();
     await new Promise(function (resolve, reject) {
       const tx = db.transaction(HANDLE_STORE, "readwrite");
@@ -156,6 +160,9 @@
   }
 
   async function loadHandle() {
+    if (Storage.isElectronMode()) {
+      return localStorage.getItem("kaoyan_electron_data_dir") || null;
+    }
     const db = await openHandleDb();
     return await new Promise(function (resolve, reject) {
       const tx = db.transaction(HANDLE_STORE, "readonly");
@@ -170,6 +177,10 @@
   }
 
   async function clearHandle() {
+    if (Storage.isElectronMode()) {
+      localStorage.removeItem("kaoyan_electron_data_dir");
+      return;
+    }
     const db = await openHandleDb();
     await new Promise(function (resolve, reject) {
       const tx = db.transaction(HANDLE_STORE, "readwrite");
@@ -183,7 +194,7 @@
 
   async function connectToHandle(handle) {
     try {
-      const permission = await handle.requestPermission({ mode: "readwrite" });
+      const permission = await Storage.requestPermission(handle);
       if (permission !== "granted") {
         openSetupModal();
         return;
@@ -268,7 +279,7 @@
 
   function renderSidebar() {
     const days = Core.daysUntil(state.settings.examDate);
-    const location = dataDirHandle ? dataDirHandle.name : "浏览器内置存储";
+    const location = dataDirHandle ? Storage.displayName(dataDirHandle) : "浏览器内置存储";
     document.getElementById("sidebar-countdown").innerHTML =
       '<div>距 ' + esc(state.settings.examName) + '</div>' +
       '<strong>' + Math.max(0, days) + ' 天</strong>' +
@@ -483,7 +494,7 @@
     const greeting = hour < 6 ? "夜深了" : hour < 12 ? "早上好" : hour < 18 ? "下午好" : "晚上好";
     const nextTask = digest.plan.next;
     const latestMemo = digest.memos[0];
-    const location = dataDirHandle ? dataDirHandle.name : "浏览器内置存储";
+    const location = dataDirHandle ? Storage.displayName(dataDirHandle) : "浏览器内置存储";
 
     document.getElementById("view-home").innerHTML =
       '<div class="countdown-card">' +
@@ -1433,7 +1444,7 @@
       return;
     }
     try {
-      const handle = await window.showDirectoryPicker({ mode: "readwrite" });
+      const handle = await Storage.pickDirectory();
       await connectToHandle(handle);
     } catch (err) {
       if (err && err.name !== "AbortError") {
@@ -1462,7 +1473,7 @@
   }
 
   function openSettings() {
-    const location = dataDirHandle ? dataDirHandle.name : "浏览器内置存储";
+    const location = dataDirHandle ? Storage.displayName(dataDirHandle) : "浏览器内置存储";
     openModal(
       "设置",
       '<form onsubmit="return App.saveSettings(event)">' +
@@ -1546,7 +1557,7 @@
       return;
     }
     try {
-      const handle = await window.showDirectoryPicker({ mode: "readwrite" });
+      const handle = await Storage.pickDirectory();
       await connectToHandle(handle);
     } catch (err) {
       if (err && err.name !== "AbortError") {
@@ -1572,7 +1583,7 @@
       return;
     }
     try {
-      const dest = await window.showDirectoryPicker({ mode: "readwrite" });
+      const dest = await Storage.pickDirectory();
       const timestamp = localTimestamp();
       const manifest = Core.backupManifest(state);
       await Storage.backupData(dataDirHandle, dest, timestamp, state, manifest);
@@ -1590,7 +1601,7 @@
       return;
     }
     try {
-      const source = await window.showDirectoryPicker({ mode: "read" });
+      const source = await Storage.pickDirectory();
       const text = dataDirHandle
         ? await Storage.restoreFromDir(source, dataDirHandle)
         : await Storage.readDataFile(source);
@@ -1610,17 +1621,23 @@
   }
 
   async function restoreFromFile() {
-    if (!window.showOpenFilePicker) {
-      toast("当前浏览器不支持文件选择恢复");
-      return;
-    }
     try {
-      const handles = await window.showOpenFilePicker({
-        types: [{ description: "data.json", accept: { "application/json": [".json"] } }],
-        multiple: false
-      });
-      const file = await handles[0].getFile();
-      const text = await file.text();
+      let text;
+      if (Storage.isElectronMode()) {
+        const filePath = await Storage.pickDataFile();
+        if (!filePath) return;
+        text = await Storage.readFileText(filePath);
+      } else if (window.showOpenFilePicker) {
+        const handles = await window.showOpenFilePicker({
+          types: [{ description: "data.json", accept: { "application/json": [".json"] } }],
+          multiple: false
+        });
+        const file = await handles[0].getFile();
+        text = await file.text();
+      } else {
+        toast("当前浏览器不支持文件选择恢复");
+        return;
+      }
       const parsed = Core.parseState(text);
       if (!parsed.ok) {
         throw new Error(parsed.error);

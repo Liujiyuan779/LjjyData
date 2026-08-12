@@ -1,0 +1,37 @@
+{
+  "name": "kaoyan-app",
+  "version": "1.0.0",
+  "description": "缘的考研舱 Electron 桌面版",
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder --win nsis"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.kaoyan.app",
+    "productName": "缘的考研舱",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "**/*",
+      "!tests/**/*",
+      "!release/**/*",
+      "!node_modules/**/*"
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}

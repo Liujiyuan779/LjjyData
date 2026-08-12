@@ -13,10 +13,42 @@ if ($LASTEXITCODE -ne 0) {
   throw "Storage tests failed"
 }
 
+Write-Host "== Running electron file service tests =="
+& node (Join-Path $PSScriptRoot "electron-file-service.test.js")
+if ($LASTEXITCODE -ne 0) {
+  throw "Electron file service tests failed"
+}
+
+Write-Host "== Running electron storage tests =="
+& node (Join-Path $PSScriptRoot "storage-electron.test.js")
+if ($LASTEXITCODE -ne 0) {
+  throw "Electron storage tests failed"
+}
+
+Write-Host "== Running electron runtime test =="
+& node (Join-Path $PSScriptRoot "electron-runtime.test.js")
+if ($LASTEXITCODE -ne 0) {
+  throw "Electron runtime test failed"
+}
+
 Write-Host "== Checking app.js syntax =="
 & node --check (Join-Path $root "app.js")
 if ($LASTEXITCODE -ne 0) {
   throw "app.js syntax check failed"
+}
+
+Write-Host "== Checking electron syntax =="
+& node --check (Join-Path $root "electron/main.js")
+if ($LASTEXITCODE -ne 0) {
+  throw "electron main syntax check failed"
+}
+& node --check (Join-Path $root "electron/preload.js")
+if ($LASTEXITCODE -ne 0) {
+  throw "electron preload syntax check failed"
+}
+& node --check (Join-Path $root "electron/fileService.js")
+if ($LASTEXITCODE -ne 0) {
+  throw "electron file service syntax check failed"
 }
 
 Write-Host "== Checking questionBank.js syntax =="
