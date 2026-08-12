@@ -62,6 +62,9 @@ try {
   if ($dom -notmatch 'id="resource-name"') {
     throw "Resources view was not rendered"
   }
+  if ($dom -notmatch 'id="resource-url"') {
+    throw "Resource URL form was not rendered"
+  }
   if ($dom -notmatch 'id="wrong-question"') {
     throw "Wrong question view was not rendered"
   }

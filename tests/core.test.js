@@ -85,12 +85,13 @@ test("testStats 统计待考、完成、平均分和目标达成", function () {
 
 test("resourceStats 统计总数、大小和类型", function () {
   const stats = Core.resourceStats([
-    { type: "真题", size: 1024 },
-    { type: "讲义", size: 2048 },
-    { type: "真题", size: 512 }
+    { type: "真题", size: 1024, url: "" },
+    { type: "讲义", size: 2048, url: "https://example.com/a.pdf" },
+    { type: "真题", size: 512, url: "" }
   ]);
   assert.strictEqual(stats.total, 3);
   assert.strictEqual(stats.totalSize, 3584);
+  assert.strictEqual(stats.urlCount, 1);
   assert.strictEqual(stats.typeCounts["真题"], 2);
   assert.strictEqual(stats.typeCounts["讲义"], 1);
 });
@@ -206,12 +207,17 @@ test("createResource、removeResource、sanitizeFileName 操作资料", function
     name: "高数讲义",
     subjectId: "math",
     type: "讲义",
-    tags: "导数"
+    tags: "导数",
+    url: "https://example.com/math.pdf"
   });
   state.resources.push(resource);
   assert.strictEqual(state.resources.length, 1);
   assert.strictEqual(resource.fileId, null);
+  assert.strictEqual(resource.url, "https://example.com/math.pdf");
   assert.strictEqual(Core.sanitizeFileName("a/b:c?.pdf"), "a_b_c_.pdf");
+  assert.strictEqual(Core.isValidHttpUrl("https://example.com"), true);
+  assert.strictEqual(Core.isValidHttpUrl("ftp://example.com"), false);
+  assert.strictEqual(Core.isValidHttpUrl("not-a-url"), false);
   Core.removeResource(state, resource.id);
   assert.strictEqual(state.resources.length, 0);
 });

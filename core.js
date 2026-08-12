@@ -303,6 +303,9 @@
     return {
       total: resources.length,
       totalSize: totalSize,
+      urlCount: resources.filter(function (r) {
+        return !!r.url;
+      }).length,
       typeCounts: typeCounts
     };
   }
@@ -698,6 +701,15 @@
     return cleaned || "file";
   }
 
+  function isValidHttpUrl(value) {
+    try {
+      const url = new URL(String(value || ""));
+      return url.protocol === "http:" || url.protocol === "https:";
+    } catch (err) {
+      return false;
+    }
+  }
+
   function createResource(data) {
     return {
       id: uid(),
@@ -707,6 +719,7 @@
       tags: data.tags || "",
       fileId: null,
       fileName: data.fileName || "",
+      url: data.url || "",
       size: 0,
       createdAt: nowISO()
     };
@@ -802,6 +815,7 @@
     filterWrongQuestions: filterWrongQuestions,
     gradeGeneratedTest: gradeGeneratedTest,
     homeDigest: homeDigest,
+    isValidHttpUrl: isValidHttpUrl,
     markUserAnswer: markUserAnswer,
     mergeState: mergeState,
     normalizeQuestion: normalizeQuestion,

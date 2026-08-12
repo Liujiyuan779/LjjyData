@@ -193,6 +193,19 @@ async function main() {
   const savedAfterImport = await evaluate("localStorage.getItem('kaoyan_app_local_fallback_v1') || ''");
   assert(savedAfterImport.indexOf("导入真题模拟卷") >= 0, "Imported test should be saved");
 
+  await evaluate(
+    "document.getElementById('resource-name').value='在线讲义';" +
+    "document.getElementById('resource-subject').value='math';" +
+    "document.getElementById('resource-type').value='讲义';" +
+    "document.getElementById('resource-tags').value='导数';" +
+    "document.getElementById('resource-url').value='https://example.com/kaoyan.pdf';" +
+    "App.addResource({preventDefault:function(){}});"
+  );
+  await sleep(500);
+  const savedAfterUrl = await evaluate("localStorage.getItem('kaoyan_app_local_fallback_v1') || ''");
+  assert(savedAfterUrl.indexOf('"url": "https://example.com/kaoyan.pdf"') >= 0, "URL resource should be saved");
+  assert(await evaluate("typeof App.openResourceUrl") === "function", "openResourceUrl should exist");
+
   console.log("PASS browser interaction test");
 }
 

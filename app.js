@@ -398,9 +398,13 @@
           (resource.size ? Core.formatBytes(resource.size) + " · " : "") +
           esc(Core.formatDateCN(resource.createdAt.slice(0, 10))) +
           (resource.tags ? " · " + esc(resource.tags) : "") +
+          (resource.url ? " · " + esc(shortName(resource.url, 40)) : "") +
         "</div>" +
       "</div>" +
       '<div class="resource-actions">' +
+        (resource.url
+          ? '<button class="btn" onclick="App.openResourceUrl(\'' + resource.id + '\')">打开链接</button>'
+          : "") +
         (resource.fileId
           ? '<button class="btn" onclick="App.openResource(\'' + resource.id + '\')">打开</button>'
           : "") +
@@ -659,7 +663,8 @@
     const filtered = state.resources.filter(function (r) {
       const matchQuery = !resourceQuery ||
         r.name.toLowerCase().includes(resourceQuery.toLowerCase()) ||
-        (r.tags || "").toLowerCase().includes(resourceQuery.toLowerCase());
+        (r.tags || "").toLowerCase().includes(resourceQuery.toLowerCase()) ||
+        (r.url || "").toLowerCase().includes(resourceQuery.toLowerCase());
       const matchSubject = resourceSubjectFilter === "all" || r.subjectId === resourceSubjectFilter;
       const matchType = resourceTypeFilter === "all" || r.type === resourceTypeFilter;
       return matchQuery && matchSubject && matchType;
@@ -672,7 +677,7 @@
         statItem("资料总数", stats.total) +
         statItem("占用空间", Core.formatBytes(stats.totalSize)) +
         statItem("带文件", state.resources.filter(function (r) { return !!r.fileId; }).length) +
-        statItem("筛选结果", filtered.length) +
+        statItem("网址资料", stats.urlCount) +
       "</div>" +
       '<div class="toolbar">' +
         '<input id="resource-search" class="input" placeholder="搜索名称或标签" value="' + esc(resourceQuery) + '" oninput="App.setResourceQuery(this.value)">' +
@@ -690,6 +695,7 @@
           '<div class="field"><label>科目</label><select id="resource-subject" class="select">' + subjectOptions() + "</select></div>" +
           '<div class="field"><label>类型</label><select id="resource-type" class="select">' + resourceTypeOptions() + "</select></div>" +
           '<div class="field full"><label>标签</label><input id="resource-tags" class="input" maxlength="100" placeholder="用逗号分隔"></div>' +
+          '<div class="field full"><label>资料网址（可选）</label><input id="resource-url" class="input" maxlength="300" placeholder="https://..."></div>' +
           '<div class="field full"><label>文件（可选，会复制到数据文件夹）</label><input id="resource-file" type="file" class="input"></div>' +
           '<button class="btn primary" type="submit">添加资料</button>' +
         "</form>" +
@@ -1184,11 +1190,17 @@
       toast("请输入资料名称");
       return;
     }
+    const url = document.getElementById("resource-url").value.trim();
+    if (url && !Core.isValidHttpUrl(url)) {
+      toast("请输入有效的 http/https 网址");
+      return;
+    }
     const resource = Core.createResource({
       name: name,
       subjectId: document.getElementById("resource-subject").value,
       type: document.getElementById("resource-type").value,
-      tags: document.getElementById("resource-tags").value.trim()
+      tags: document.getElementById("resource-tags").value.trim(),
+      url: url
     });
     state.resources.push(resource);
     const fileInput = document.getElementById("resource-file");
@@ -1241,6 +1253,17 @@
     } catch (err) {
       toast("打开文件失败：" + err.message);
     }
+  }
+
+  function openResourceUrl(id) {
+    const resource = state.resources.find(function (r) {
+      return r.id === id;
+    });
+    if (!resource || !resource.url) {
+      toast("这条资料没有网址");
+      return;
+    }
+    window.open(resource.url, "_blank", "noopener,noreferrer");
   }
 
   async function deleteResource(id) {
@@ -1643,6 +1666,7 @@
     nextQuestion: nextQuestion,
     openSettings: openSettings,
     openResource: openResource,
+    openResourceUrl: openResourceUrl,
     openSetupModal: openSetupModal,
     prevQuestion: prevQuestion,
     removeSubjectRow: removeSubjectRow,
