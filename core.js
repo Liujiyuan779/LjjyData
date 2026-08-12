@@ -710,6 +710,25 @@
     }
   }
 
+  function buildSearchUrl(query) {
+    return "https://www.bing.com/search?q=" + encodeURIComponent(String(query || "").trim());
+  }
+
+  function buildExamSearchQuery(options) {
+    const parts = [];
+    if (options.year && options.year !== "all") {
+      parts.push(options.year + "年");
+    }
+    parts.push("考研");
+    if (options.subjectName) {
+      parts.push(options.subjectName);
+    }
+    if (options.keyword) {
+      parts.push(options.keyword);
+    }
+    return parts.join(" ");
+  }
+
   function createResource(data) {
     return {
       id: uid(),
@@ -798,6 +817,8 @@
   return {
     addDaysISO: addDaysISO,
     backupManifest: backupManifest,
+    buildExamSearchQuery: buildExamSearchQuery,
+    buildSearchUrl: buildSearchUrl,
     applyWrongReview: applyWrongReview,
     completeGeneratedTest: completeGeneratedTest,
     completeTest: completeTest,

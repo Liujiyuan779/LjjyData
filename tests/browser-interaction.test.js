@@ -206,6 +206,15 @@ async function main() {
   assert(savedAfterUrl.indexOf('"url": "https://example.com/kaoyan.pdf"') >= 0, "URL resource should be saved");
   assert(await evaluate("typeof App.openResourceUrl") === "function", "openResourceUrl should exist");
 
+  assert(await evaluate("typeof App.searchMockTest") === "function", "searchMockTest should exist");
+  await evaluate(
+    "window.__openedUrl='';" +
+    "window.open=function(url){window.__openedUrl=url; return null;};" +
+    "App.searchOnline('2024 考研 数学 真题');"
+  );
+  const openedUrl = await evaluate("window.__openedUrl || ''");
+  assert(openedUrl.indexOf("https://www.bing.com/search?q=") === 0, "Search should open Bing URL");
+
   console.log("PASS browser interaction test");
 }
 

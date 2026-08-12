@@ -222,6 +222,22 @@ test("createResource、removeResource、sanitizeFileName 操作资料", function
   assert.strictEqual(state.resources.length, 0);
 });
 
+test("buildSearchUrl 和 buildExamSearchQuery 构造搜索", function () {
+  assert.strictEqual(Core.buildSearchUrl("考研 真题"), "https://www.bing.com/search?q=" + encodeURIComponent("考研 真题"));
+  const query = Core.buildExamSearchQuery({
+    year: "2024",
+    subjectName: "数学",
+    keyword: "真题"
+  });
+  assert.strictEqual(query, "2024年 考研 数学 真题");
+  const allYear = Core.buildExamSearchQuery({
+    year: "all",
+    subjectName: "英语",
+    keyword: ""
+  });
+  assert.strictEqual(allYear, "考研 英语");
+});
+
 test("createWrongQuestion、removeWrongQuestion、applyWrongReview 操作错题", function () {
   const state = { wrongQuestions: [] };
   const q = Core.createWrongQuestion({

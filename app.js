@@ -643,6 +643,21 @@
         "</form>" +
         '<div class="muted" style="margin-top:8px">内置题库为示例整理版，已标注“非官方原题”；导入题支持上面的文本格式或 questions 数组 JSON。</div>' +
       "</div>" +
+      '<div class="card">' +
+        '<div class="card-head"><h3>联网搜索近年真题</h3></div>' +
+        '<form class="form-grid" onsubmit="return App.searchMockTest(event)">' +
+          '<div class="field"><label>科目</label><select id="search-subject" class="select">' + subjectOptions() + "</select></div>" +
+          '<div class="field"><label>年份</label><select id="search-year" class="select">' +
+            '<option value="all">近年全部</option>' +
+            QuestionBank.years.map(function (year) {
+              return '<option value="' + year + '">' + year + "年</option>";
+            }).join("") +
+          "</select></div>" +
+          '<div class="field"><label>关键词</label><input id="search-keyword" class="input" value="真题 下载"></div>' +
+          '<button class="btn primary" type="submit">搜索</button>' +
+        "</form>" +
+        '<div class="muted" style="margin-top:8px">将在浏览器新标签页打开搜索结果；找到网页后可回到“电子资料”按网址添加。</div>' +
+      "</div>" +
       (planned.length
         ? '<div class="section-head"><h2 class="section-title">待考列表</h2></div><div class="list">' +
           planned.map(testRow).join("") + "</div>"
@@ -1015,6 +1030,30 @@
     state.tests.push(test);
     commit();
     toast("已导入并生成模拟卷");
+  }
+
+  function searchMockTest(event) {
+    event.preventDefault();
+    const subjectId = document.getElementById("search-subject").value;
+    const year = document.getElementById("search-year").value;
+    const keyword = document.getElementById("search-keyword").value.trim() || "真题";
+    const subject = subjectById(subjectId);
+    const query = Core.buildExamSearchQuery({
+      year: year,
+      subjectName: subject ? subject.name : "",
+      keyword: keyword
+    });
+    searchOnline(query);
+  }
+
+  function searchOnline(query) {
+    if (!query) {
+      toast("请输入搜索关键词");
+      return;
+    }
+    const url = Core.buildSearchUrl(query);
+    window.open(url, "_blank", "noopener,noreferrer");
+    toast("已在新标签页打开搜索结果");
   }
 
   function startQuestionTest(test) {
@@ -1674,6 +1713,8 @@
     restoreFromFolder: restoreFromFolder,
     revealReviewAnswer: revealReviewAnswer,
     saveSettings: saveSettings,
+    searchMockTest: searchMockTest,
+    searchOnline: searchOnline,
     setPlanDateToday: setPlanDateToday,
     setResourceQuery: setResourceQuery,
     setResourceSubject: setResourceSubject,
