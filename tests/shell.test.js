@@ -26,5 +26,6 @@ assert.strictEqual(pkg.main, "electron/main.js", "package.json should point to E
 assert.ok(fs.existsSync(path.join(root, "electron/main.js")), "electron main should exist");
 assert.ok(fs.existsSync(path.join(root, "electron/preload.js")), "electron preload should exist");
 assert.ok(fs.existsSync(path.join(root, "electron/fileService.js")), "electron file service should exist");
+assert.ok(!appJs.includes("暂用浏览器存储"), "browser fallback option should be removed from UI");
 
 console.log("ALL SHELL TESTS PASSED");

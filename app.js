@@ -71,7 +71,7 @@
       try {
         if (dataDirHandle) {
           await Storage.writeDataFile(dataDirHandle, Core.serializeState(state));
-        } else {
+        } else if (!Storage.isElectronMode()) {
           saveFallback(state);
         }
       } catch (err) {
@@ -229,9 +229,8 @@
   function openSetupModal() {
     openModal(
       "选择数据文件夹",
-      '<p class="muted">首次使用请选择一个本地文件夹，APP 会把数据和资料保存在里面。</p>' +
+      '<p class="muted">本应用仅支持本地数据文件夹存储。首次使用请选择一个文件夹，APP 会把数据和资料保存在里面。</p>' +
       '<div class="modal-actions">' +
-      '<button class="btn" onclick="App.useLocalFallback()">暂用浏览器存储</button>' +
       '<button class="btn primary" onclick="App.chooseDataFolder()">选择数据文件夹</button>' +
       "</div>",
       false
@@ -1454,6 +1453,10 @@
   }
 
   function useLocalFallback() {
+    if (Storage.isElectronMode()) {
+      toast("桌面版必须使用本地数据文件夹");
+      return;
+    }
     closeModal();
     storageMode = "local";
     dataDirHandle = null;

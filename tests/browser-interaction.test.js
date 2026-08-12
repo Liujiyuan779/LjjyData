@@ -169,16 +169,17 @@ async function main() {
 
   await evaluate("App.openSetupModal()");
   assert(
-    await evaluate("!!document.querySelector('[onclick=\"App.useLocalFallback()\"]')"),
-    "Setup modal button should be clickable"
+    await evaluate("!document.querySelector('[onclick=\"App.useLocalFallback()\"]')"),
+    "Setup modal should not contain browser fallback button"
   );
 
-  await evaluate("document.querySelector('[onclick=\"App.useLocalFallback()\"]').click()");
+  await evaluate("App.closeModal()");
+  await evaluate("App.useLocalFallback()");
   await sleep(400);
 
   assert(
     await evaluate("document.getElementById('modal-root').innerHTML === ''"),
-    "Modal should close after clicking fallback"
+    "Modal should close after using browser fallback in browser test mode"
   );
   assert(
     await evaluate("!!localStorage.getItem('kaoyan_app_local_fallback_v1')"),
