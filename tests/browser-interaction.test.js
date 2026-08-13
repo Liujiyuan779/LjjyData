@@ -215,7 +215,32 @@ async function main() {
     await evaluate("!document.querySelector('[onclick=\"App.restoreFromFolder()\"]')"),
     "Restore from folder button should be removed"
   );
+  assert(
+    await evaluate("!document.querySelector('[onclick=\"App.restoreFromFile()\"]')"),
+    "Restore from data.json button should be removed"
+  );
   await evaluate("App.closeModal()");
+
+  await evaluate("App.openResetPassword()");
+  await evaluate(
+    "document.getElementById('reset-email').value='user@example.com';" +
+    "document.getElementById('reset-secondary').value='246810';" +
+    "document.getElementById('reset-new-password').value='resetpass1';" +
+    "App.resetPassword({preventDefault:function(){}});"
+  );
+  await sleep(400);
+  assert(await evaluate("App.isLoggedIn() === false"), "Reset while logged in should log out");
+  assert(
+    await evaluate("!document.getElementById('auth-screen').classList.contains('hidden')"),
+    "Auth screen should show after reset from settings"
+  );
+  await evaluate(
+    "document.getElementById('auth-login-email').value='user@example.com';" +
+    "document.getElementById('auth-login-password').value='resetpass1';" +
+    "App.login({preventDefault:function(){}});"
+  );
+  await sleep(600);
+  assert(await evaluate("App.isLoggedIn()"), "User should log in with reset password from settings");
 
   await evaluate("App.openSetupModal()");
   assert(

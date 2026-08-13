@@ -278,7 +278,7 @@
         toast("用户账号云保存失败：" + err.message);
       }
     }
-    closeModal();
+    logout();
     toast("密码已重置，请使用新密码登录");
   }
 
@@ -1743,7 +1743,6 @@
         '<p class="muted">当前：' + esc(location) + "</p>" +
         '<div class="modal-actions">' +
           '<button class="btn" type="button" onclick="App.backupNow()">备份</button>' +
-          '<button class="btn" type="button" onclick="App.restoreFromFile()">从 data.json 恢复</button>' +
           '<button class="btn" type="button" onclick="App.openResetPassword()">重置密码</button>' +
           '<button class="btn danger" type="button" onclick="App.logout()">退出登录</button>' +
           '<button class="btn primary" type="submit">保存设置</button>' +
