@@ -7,6 +7,16 @@
 })(typeof self !== "undefined" ? self : this, function () {
   "use strict";
 
+  const DEFAULT_CONFIG = {
+    url: "https://mvqdknksuflzprekjaik.supabase.co",
+    anonKey: "sb_publishable_DqadG6tq3II-1qD18MqgUw_hq0y7zzw",
+    bucket: "resources"
+  };
+
+  function getDefaultConfig() {
+    return Object.assign({}, DEFAULT_CONFIG);
+  }
+
   function normalizeUrl(url) {
     return String(url || "").trim()
       .replace(/\/+$/, "")
@@ -112,6 +122,7 @@
   return {
     deleteResource: deleteResource,
     downloadResource: downloadResource,
+    getDefaultConfig: getDefaultConfig,
     isConfigured: isConfigured,
     loadState: loadState,
     normalizeUrl: normalizeUrl,

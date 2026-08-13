@@ -40,6 +40,14 @@ test("normalizeUrl 去掉 /rest/v1", function () {
   assert.strictEqual(Cloud.isConfigured(config), true);
 });
 
+test("getDefaultConfig 返回内置云数据库配置", function () {
+  const def = Cloud.getDefaultConfig();
+  assert.strictEqual(def.url, "https://mvqdknksuflzprekjaik.supabase.co");
+  assert.ok(def.anonKey.length > 10);
+  assert.strictEqual(def.bucket, "resources");
+  assert.strictEqual(Cloud.isConfigured(def), true);
+});
+
 test("saveState 使用 upsert 保存 jsonb", async function () {
   mockFetch(function (url, options) {
     assert.ok(url.indexOf("/rest/v1/app_data?on_conflict=user_key") >= 0);

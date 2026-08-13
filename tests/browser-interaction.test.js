@@ -177,6 +177,9 @@ async function main() {
     "Forgot password modal should open"
   );
   await evaluate("App.closeModal()");
+  await evaluate(
+    "window.fetch=function(){return Promise.resolve({ok:true,status:200,text:async function(){return '';},json:async function(){return [];},blob:async function(){return new Blob();}});};"
+  );
   await evaluate("App.showRegister()");
   await evaluate(
     "document.getElementById('auth-register-email').value='user@example.com';" +

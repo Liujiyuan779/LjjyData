@@ -111,18 +111,13 @@
   function loadCloudConfig() {
     try {
       const raw = localStorage.getItem(CLOUD_CONFIG_KEY);
-      return raw ? JSON.parse(raw) : null;
+      if (raw) {
+        return JSON.parse(raw);
+      }
     } catch (err) {
-      return null;
+      // fall through to default
     }
-  }
-
-  function saveCloudConfig() {
-    try {
-      localStorage.setItem(CLOUD_CONFIG_KEY, JSON.stringify(cloudConfig));
-    } catch (err) {
-      // ignore
-    }
+    return Cloud.getDefaultConfig();
   }
 
   function openCloudSetupModal() {
@@ -282,6 +277,7 @@
       try {
         if (cloudConfig && session && Cloud.isConfigured(cloudConfig)) {
           await Cloud.saveState(cloudConfig, session.email, state);
+          saveFallback(state);
         } else if (dataDirHandle) {
           await Storage.writeDataFile(dataDirHandle, Core.serializeState(state));
         } else if (!Storage.isElectronMode()) {
@@ -1704,12 +1700,6 @@
       "设置",
       '<form onsubmit="return App.saveSettings(event)">' +
         '<div class="form-grid">' +
-          '<div class="field full"><label>Supabase Project URL</label><input id="set-cloud-url" class="input" value="' +
-            esc(cloudConfig ? cloudConfig.url : "") + '" placeholder="https://xxx.supabase.co"></div>' +
-          '<div class="field full"><label>Supabase anon public key</label><input id="set-cloud-key" class="input" value="' +
-            esc(cloudConfig ? cloudConfig.anonKey : "") + '" placeholder="sb_publishable_..."></div>' +
-          '<div class="field"><label>存储桶名称</label><input id="set-cloud-bucket" class="input" value="' +
-            esc(cloudConfig ? cloudConfig.bucket : "resources") + '"></div>' +
           '<div class="field"><label>考试名称</label><input id="set-exam-name" class="input" value="' + esc(state.settings.examName) + '" maxlength="40"></div>' +
           '<div class="field"><label>考试日期</label><input id="set-exam-date" type="date" class="input" value="' + esc(state.settings.examDate) + '" required></div>' +
           '<div class="field"><label>你的名字</label><input id="set-user-name" class="input" value="' + esc(state.settings.userName) + '" maxlength="20"></div>' +
@@ -1760,28 +1750,6 @@
 
   function saveSettings(event) {
     event.preventDefault();
-    const cloudUrl = document.getElementById("set-cloud-url").value.trim();
-    const cloudKey = document.getElementById("set-cloud-key").value.trim();
-    const cloudBucket = document.getElementById("set-cloud-bucket").value.trim();
-    if (cloudUrl || cloudKey) {
-      cloudConfig = {
-        url: cloudUrl,
-        anonKey: cloudKey,
-        bucket: cloudBucket || "resources"
-      };
-      if (!Cloud.isConfigured(cloudConfig)) {
-        toast("云数据库配置不完整，请检查 URL、anon key 和存储桶");
-        return;
-      }
-      saveCloudConfig();
-    } else {
-      cloudConfig = null;
-      try {
-        localStorage.removeItem(CLOUD_CONFIG_KEY);
-      } catch (err) {
-        // ignore
-      }
-    }
     const rows = Array.from(document.querySelectorAll("#subject-list .subject-row"));
     const subjects = rows.map(function (row) {
       return {

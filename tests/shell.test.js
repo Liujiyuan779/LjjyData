@@ -31,5 +31,6 @@ assert.ok(fs.existsSync(path.join(root, "electron/fileService.js")), "electron f
 assert.ok(!appJs.includes("暂用浏览器存储"), "browser fallback option should be removed from UI");
 assert.ok(!appJs.includes("toggleTheme"), "dark theme toggle should be removed");
 assert.ok(!html.includes('id="theme-toggle"'), "theme toggle button should be removed");
+assert.ok(!appJs.includes("set-cloud-url"), "user cloud config fields should be removed");
 
 console.log("ALL SHELL TESTS PASSED");
