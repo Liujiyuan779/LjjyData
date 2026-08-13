@@ -71,8 +71,8 @@ try {
   if ($dom -notmatch 'id="auth-login-email"') {
     throw "Login form was not rendered"
   }
-  if ($dom -notmatch 'id="auth-register-code"') {
-    throw "Register form was not rendered"
+  if ($dom -match 'id="auth-register-code"') {
+    throw "Verification code field should be removed"
   }
   if ($dom -notmatch 'id="resource-name"') {
     throw "Resources view was not rendered"

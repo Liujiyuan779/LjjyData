@@ -36,11 +36,6 @@
           <form onsubmit="return App.register(event)">
             <input id="auth-register-email" class="input" type="email" placeholder="邮箱" required>
             <input id="auth-register-password" class="input" type="password" placeholder="密码（至少 6 位）" required>
-            <div class="auth-code-row">
-              <input id="auth-register-code" class="input" placeholder="验证码" required>
-              <button class="btn small" type="button" onclick="App.requestVerificationCode()">获取验证码</button>
-            </div>
-            <div id="auth-code-display" class="auth-code-display"></div>
             <div id="auth-register-error" class="auth-error"></div>
             <button class="btn primary" type="submit">注册</button>
           </form>

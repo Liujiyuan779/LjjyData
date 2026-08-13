@@ -33,21 +33,13 @@
     return await sha256Hex(salt + ":" + password);
   }
 
-  function generateVerificationCode() {
-    return String(Math.floor(100000 + Math.random() * 900000));
-  }
-
-  async function registerUser(users, input, pendingCodes) {
+  async function registerUser(users, input) {
     const email = normalizeEmail(input.email);
     if (!EMAIL_RE.test(email)) {
       return { ok: false, error: "邮箱格式不正确" };
     }
     if (!input.password || String(input.password).length < 6) {
       return { ok: false, error: "密码至少 6 位" };
-    }
-    const codeInfo = pendingCodes[email];
-    if (!codeInfo || codeInfo.code !== String(input.code || "").trim() || codeInfo.expiresAt < Date.now()) {
-      return { ok: false, error: "验证码错误或已过期" };
     }
     if (users.some(function (u) { return u.email === email; })) {
       return { ok: false, error: "该邮箱已注册" };
@@ -62,7 +54,6 @@
       createdAt: new Date().toISOString()
     };
     users.push(user);
-    delete pendingCodes[email];
     return { ok: true, user: user };
   }
 
@@ -97,7 +88,6 @@
 
   return {
     createSession: createSession,
-    generateVerificationCode: generateVerificationCode,
     isValidSession: isValidSession,
     loginUser: loginUser,
     normalizeEmail: normalizeEmail,

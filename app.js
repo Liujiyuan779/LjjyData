@@ -17,7 +17,6 @@
   let cloudConfig = loadCloudConfig();
   let authUsers = loadAuthUsers();
   let session = loadSession();
-  let pendingCodes = {};
   let currentView = "home";
   let dataDirHandle = null;
   let storageMode = "local";
@@ -184,31 +183,12 @@
     setAuthError("register", "");
   }
 
-  function requestVerificationCode() {
-    const email = document.getElementById("auth-register-email").value.trim();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setAuthError("register", "请输入有效邮箱");
-      return;
-    }
-    const code = Auth.generateVerificationCode();
-    pendingCodes[Auth.normalizeEmail(email)] = {
-      code: code,
-      expiresAt: Date.now() + 5 * 60 * 1000
-    };
-    const display = document.getElementById("auth-code-display");
-    if (display) {
-      display.textContent = "验证码：" + code + "（演示环境未发送邮件）";
-    }
-    setAuthError("register", "");
-  }
-
   async function register(event) {
     event.preventDefault();
     const result = await Auth.registerUser(authUsers, {
       email: document.getElementById("auth-register-email").value,
-      password: document.getElementById("auth-register-password").value,
-      code: document.getElementById("auth-register-code").value
-    }, pendingCodes);
+      password: document.getElementById("auth-register-password").value
+    });
     if (!result.ok) {
       setAuthError("register", result.error);
       return;
@@ -1956,7 +1936,6 @@
     restoreFromFolder: restoreFromFolder,
     revealReviewAnswer: revealReviewAnswer,
     register: register,
-    requestVerificationCode: requestVerificationCode,
     saveSettings: saveSettings,
     searchMockTest: searchMockTest,
     searchOnline: searchOnline,

@@ -171,14 +171,6 @@ async function main() {
   await evaluate(
     "document.getElementById('auth-register-email').value='user@example.com';" +
     "document.getElementById('auth-register-password').value='abc123';" +
-    "App.requestVerificationCode();"
-  );
-  const verificationCode = await evaluate(
-    "(function(){var el=document.getElementById('auth-code-display');var m=(el.textContent||'').match(/\\d{6}/);return m?m[0]:'';})()"
-  );
-  assert(verificationCode.length === 6, "Verification code should be shown");
-  await evaluate(
-    "document.getElementById('auth-register-code').value='" + verificationCode + "';" +
     "App.register({preventDefault:function(){}});"
   );
   await sleep(600);
