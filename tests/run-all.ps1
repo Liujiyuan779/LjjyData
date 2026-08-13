@@ -13,6 +13,12 @@ if ($LASTEXITCODE -ne 0) {
   throw "Auth tests failed"
 }
 
+Write-Host "== Running cloud tests =="
+& node (Join-Path $PSScriptRoot "cloud.test.js")
+if ($LASTEXITCODE -ne 0) {
+  throw "Cloud tests failed"
+}
+
 Write-Host "== Running storage tests =="
 & node (Join-Path $PSScriptRoot "storage.test.js")
 if ($LASTEXITCODE -ne 0) {
@@ -67,6 +73,12 @@ Write-Host "== Checking auth.js syntax =="
 & node --check (Join-Path $root "auth.js")
 if ($LASTEXITCODE -ne 0) {
   throw "auth.js syntax check failed"
+}
+
+Write-Host "== Checking cloud.js syntax =="
+& node --check (Join-Path $root "cloud.js")
+if ($LASTEXITCODE -ne 0) {
+  throw "cloud.js syntax check failed"
 }
 
 Write-Host "== Running shell tests =="

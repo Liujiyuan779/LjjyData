@@ -5,13 +5,16 @@
   const Storage = window.KaoYanStorage;
   const QuestionBank = window.KaoYanQuestionBank;
   const Auth = window.KaoYanAuth;
+  const Cloud = window.KaoYanCloud;
   const SAVE_KEY = "kaoyan_app_local_fallback_v1";
   const HANDLE_DB = "kaoyan_handle_db";
   const HANDLE_STORE = "handles";
   const AUTH_USERS_KEY = "kaoyan_auth_users_v1";
   const AUTH_SESSION_KEY = "kaoyan_auth_session_v1";
+  const CLOUD_CONFIG_KEY = "kaoyan_supabase_config_v1";
 
   let state = loadFallbackState();
+  let cloudConfig = loadCloudConfig();
   let authUsers = loadAuthUsers();
   let session = loadSession();
   let pendingCodes = {};
@@ -106,6 +109,52 @@
     }
   }
 
+  function loadCloudConfig() {
+    try {
+      const raw = localStorage.getItem(CLOUD_CONFIG_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  function saveCloudConfig() {
+    try {
+      localStorage.setItem(CLOUD_CONFIG_KEY, JSON.stringify(cloudConfig));
+    } catch (err) {
+      // ignore
+    }
+  }
+
+  function openCloudSetupModal() {
+    openModal(
+      "配置云数据库",
+      '<p class="muted">数据将保存在 Supabase 云数据库中。请先打开设置，填写 Project URL、anon public key 和存储桶名称。</p>' +
+      '<div class="modal-actions">' +
+        '<button class="btn primary" onclick="App.openSettings()">打开设置</button>' +
+      "</div>",
+      true
+    );
+  }
+
+  async function ensureCloudConnection() {
+    if (!session) return;
+    if (!cloudConfig || !Cloud.isConfigured(cloudConfig)) {
+      openCloudSetupModal();
+      return;
+    }
+    try {
+      const cloudState = await Cloud.loadState(cloudConfig, session.email);
+      if (cloudState) {
+        state = Core.mergeState(cloudState);
+        render();
+      }
+      toast("云数据已连接");
+    } catch (err) {
+      toast("云数据加载失败：" + err.message);
+    }
+  }
+
   function setAuthError(view, message) {
     const el = document.getElementById(view === "register" ? "auth-register-error" : "auth-error");
     if (el) el.textContent = message || "";
@@ -168,7 +217,7 @@
     session = Auth.createSession(result.user);
     saveSession();
     renderAuth();
-    await ensureDataConnection();
+    await ensureCloudConnection();
   }
 
   async function login(event) {
@@ -184,7 +233,7 @@
     session = Auth.createSession(result.user);
     saveSession();
     renderAuth();
-    await ensureDataConnection();
+    await ensureCloudConnection();
   }
 
   function logout() {
@@ -218,7 +267,9 @@
   async function saveNow() {
     const task = saveQueue.then(async function () {
       try {
-        if (dataDirHandle) {
+        if (cloudConfig && session && Cloud.isConfigured(cloudConfig)) {
+          await Cloud.saveState(cloudConfig, session.email, state);
+        } else if (dataDirHandle) {
           await Storage.writeDataFile(dataDirHandle, Core.serializeState(state));
         } else if (!Storage.isElectronMode()) {
           saveFallback(state);
@@ -428,7 +479,9 @@
 
   function renderSidebar() {
     const days = Core.daysUntil(state.settings.examDate);
-    const location = dataDirHandle ? Storage.displayName(dataDirHandle) : "浏览器内置存储";
+    const location = cloudConfig && Cloud.isConfigured(cloudConfig)
+      ? "云数据库"
+      : (dataDirHandle ? Storage.displayName(dataDirHandle) : "本地缓存");
     document.getElementById("sidebar-countdown").innerHTML =
       '<div>距 ' + esc(state.settings.examName) + '</div>' +
       '<strong>' + Math.max(0, days) + ' 天</strong>' +
@@ -643,7 +696,9 @@
     const greeting = hour < 6 ? "夜深了" : hour < 12 ? "早上好" : hour < 18 ? "下午好" : "晚上好";
     const nextTask = digest.plan.next;
     const latestMemo = digest.memos[0];
-    const location = dataDirHandle ? Storage.displayName(dataDirHandle) : "浏览器内置存储";
+    const location = cloudConfig && Cloud.isConfigured(cloudConfig)
+      ? "云数据库"
+      : (dataDirHandle ? Storage.displayName(dataDirHandle) : "本地缓存");
 
     document.getElementById("view-home").innerHTML =
       '<div class="countdown-card">' +
@@ -1388,19 +1443,25 @@
     const fileInput = document.getElementById("resource-file");
     const file = fileInput && fileInput.files.length ? fileInput.files[0] : null;
     if (file) {
-      if (!dataDirHandle) {
-        toast("请先连接数据文件夹，文件未保存");
-      } else {
-        try {
+      try {
+        if (cloudConfig && session && Cloud.isConfigured(cloudConfig)) {
+          const cloudPath = Cloud.resourcePath(session.email, file.name);
+          await Cloud.uploadResource(cloudConfig, cloudPath, file);
+          resource.fileId = cloudPath;
+          resource.fileName = file.name;
+          resource.size = file.size;
+        } else if (dataDirHandle) {
           const resDir = await Storage.getSubdir(dataDirHandle, "resources", true);
           const storedName = resource.id + "_" + Core.sanitizeFileName(file.name);
           await Storage.writeBlob(resDir, storedName, file);
           resource.fileId = storedName;
           resource.fileName = file.name;
           resource.size = file.size;
-        } catch (err) {
-          toast("文件保存失败：" + err.message);
+        } else {
+          toast("请先配置云数据库，文件未保存");
         }
+      } catch (err) {
+        toast("文件保存失败：" + err.message);
       }
     }
     commit();
@@ -1411,17 +1472,25 @@
     const resource = state.resources.find(function (r) {
       return r.id === id;
     });
-    if (!resource || !resource.fileId || !dataDirHandle) {
+    if (!resource || !resource.fileId) {
       toast("这条资料没有可打开的文件");
       return;
     }
     try {
-      const resDir = await Storage.getSubdir(dataDirHandle, "resources", false);
-      if (!resDir) {
-        toast("数据文件夹中没有 resources 目录");
+      let blob;
+      if (cloudConfig && session && Cloud.isConfigured(cloudConfig)) {
+        blob = await Cloud.downloadResource(cloudConfig, resource.fileId);
+      } else if (dataDirHandle) {
+        const resDir = await Storage.getSubdir(dataDirHandle, "resources", false);
+        if (!resDir) {
+          toast("数据文件夹中没有 resources 目录");
+          return;
+        }
+        blob = await Storage.readBlob(resDir, resource.fileId);
+      } else {
+        toast("请先配置云数据库");
         return;
       }
-      const blob = await Storage.readBlob(resDir, resource.fileId);
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -1454,11 +1523,17 @@
     });
     if (!resource) return;
     if (!window.confirm("确定删除这条资料吗？对应文件也会被移除。")) return;
-    if (resource.fileId && dataDirHandle) {
+    if (resource.fileId) {
       try {
-        const resDir = await Storage.getSubdir(dataDirHandle, "resources", false);
-        if (resDir) {
-          await Storage.removeEntry(resDir, resource.fileId);
+        if (cloudConfig && Cloud.isConfigured(cloudConfig)) {
+          await Cloud.deleteResource(cloudConfig, resource.fileId);
+        } else if (dataDirHandle) {
+          const resDir = await Storage.getSubdir(dataDirHandle, "resources", false);
+          if (resDir) {
+            await Storage.removeEntry(resDir, resource.fileId);
+          }
+        } else {
+          toast("未配置云数据库，仅删除资料记录");
         }
       } catch (err) {
         toast("文件删除失败：" + err.message);
@@ -1626,7 +1701,9 @@
   }
 
   function openSettings() {
-    const location = dataDirHandle ? Storage.displayName(dataDirHandle) : "浏览器内置存储";
+    const location = cloudConfig && Cloud.isConfigured(cloudConfig)
+      ? "云数据库"
+      : (dataDirHandle ? Storage.displayName(dataDirHandle) : "本地缓存");
     openModal(
       "设置",
       '<form onsubmit="return App.saveSettings(event)">' +
@@ -1635,6 +1712,12 @@
             '<option value="light"' + (state.settings.theme !== "dark" ? " selected" : "") + ">浅色</option>" +
             '<option value="dark"' + (state.settings.theme === "dark" ? " selected" : "") + ">深色</option>" +
           "</select></div>" +
+          '<div class="field full"><label>Supabase Project URL</label><input id="set-cloud-url" class="input" value="' +
+            esc(cloudConfig ? cloudConfig.url : "") + '" placeholder="https://xxx.supabase.co"></div>' +
+          '<div class="field full"><label>Supabase anon public key</label><input id="set-cloud-key" class="input" value="' +
+            esc(cloudConfig ? cloudConfig.anonKey : "") + '" placeholder="sb_publishable_..."></div>' +
+          '<div class="field"><label>存储桶名称</label><input id="set-cloud-bucket" class="input" value="' +
+            esc(cloudConfig ? cloudConfig.bucket : "resources") + '"></div>' +
           '<div class="field"><label>考试名称</label><input id="set-exam-name" class="input" value="' + esc(state.settings.examName) + '" maxlength="40"></div>' +
           '<div class="field"><label>考试日期</label><input id="set-exam-date" type="date" class="input" value="' + esc(state.settings.examDate) + '" required></div>' +
           '<div class="field"><label>你的名字</label><input id="set-user-name" class="input" value="' + esc(state.settings.userName) + '" maxlength="20"></div>' +
@@ -1685,6 +1768,28 @@
 
   function saveSettings(event) {
     event.preventDefault();
+    const cloudUrl = document.getElementById("set-cloud-url").value.trim();
+    const cloudKey = document.getElementById("set-cloud-key").value.trim();
+    const cloudBucket = document.getElementById("set-cloud-bucket").value.trim();
+    if (cloudUrl || cloudKey) {
+      cloudConfig = {
+        url: cloudUrl,
+        anonKey: cloudKey,
+        bucket: cloudBucket || "resources"
+      };
+      if (!Cloud.isConfigured(cloudConfig)) {
+        toast("云数据库配置不完整，请检查 URL、anon key 和存储桶");
+        return;
+      }
+      saveCloudConfig();
+    } else {
+      cloudConfig = null;
+      try {
+        localStorage.removeItem(CLOUD_CONFIG_KEY);
+      } catch (err) {
+        // ignore
+      }
+    }
     const rows = Array.from(document.querySelectorAll("#subject-list .subject-row"));
     const subjects = rows.map(function (row) {
       return {
@@ -1702,6 +1807,9 @@
     }, subjects);
     commit();
     closeModal();
+    if (cloudConfig && session) {
+      ensureCloudConnection();
+    }
     toast("设置已保存");
   }
 
@@ -1728,6 +1836,10 @@
   }
 
   async function backupNow() {
+    if (cloudConfig && Cloud.isConfigured(cloudConfig)) {
+      toast("数据已自动保存到云数据库");
+      return;
+    }
     if (!dataDirHandle) {
       toast("请先连接数据文件夹");
       return;
@@ -1825,7 +1937,7 @@
     render();
 
     if (session) {
-      await ensureDataConnection();
+      await ensureCloudConnection();
     }
   }
 

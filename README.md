@@ -13,6 +13,16 @@ npm start
 
 Windows 下也可以直接双击 `启动考研舱.bat`，脚本会自动检查并安装依赖，然后以桌面应用方式启动。
 
+## 云数据库
+
+数据默认保存在 Supabase 云数据库。首次使用时在“设置”中填写：
+
+- Supabase Project URL
+- anon public key
+- 存储桶名称（默认 `resources`）
+
+建表 SQL 见 `supabase-schema.sql`，在 Supabase SQL Editor 中执行一次即可。
+
 ## 打包安装程序
 
 ```bash
