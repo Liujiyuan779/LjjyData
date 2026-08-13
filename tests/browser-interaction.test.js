@@ -167,6 +167,16 @@ async function main() {
     await evaluate("!document.getElementById('auth-screen').classList.contains('hidden')"),
     "Auth screen should show before login"
   );
+  assert(
+    await evaluate("!!document.getElementById('auth-forgot-password')"),
+    "Forgot password link should exist on login screen"
+  );
+  await evaluate("document.getElementById('auth-forgot-password').click()");
+  assert(
+    await evaluate("!!document.getElementById('reset-email')"),
+    "Forgot password modal should open"
+  );
+  await evaluate("App.closeModal()");
   await evaluate("App.showRegister()");
   await evaluate(
     "document.getElementById('auth-register-email').value='user@example.com';" +

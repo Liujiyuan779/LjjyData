@@ -71,6 +71,9 @@ try {
   if ($dom -notmatch 'id="auth-login-email"') {
     throw "Login form was not rendered"
   }
+  if ($dom -notmatch 'id="auth-forgot-password"') {
+    throw "Forgot password link was not rendered"
+  }
   if ($dom -match 'id="auth-register-code"') {
     throw "Verification code field should be removed"
   }
