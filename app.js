@@ -187,7 +187,8 @@
     event.preventDefault();
     const result = await Auth.registerUser(authUsers, {
       email: document.getElementById("auth-register-email").value,
-      password: document.getElementById("auth-register-password").value
+      password: document.getElementById("auth-register-password").value,
+      secondaryPassword: document.getElementById("auth-register-secondary").value
     });
     if (!result.ok) {
       setAuthError("register", result.error);
@@ -221,6 +222,38 @@
     saveSession();
     closeModal();
     renderAuth();
+  }
+
+  function openResetPassword() {
+    openModal(
+      "重置密码",
+      '<form onsubmit="return App.resetPassword(event)">' +
+        '<div class="field"><label>邮箱</label><input id="reset-email" type="email" class="input" required></div>' +
+        '<div class="field"><label>二级密码（6 位数字）</label><input id="reset-secondary" type="password" inputmode="numeric" maxlength="6" class="input" required></div>' +
+        '<div class="field"><label>新密码（至少 6 位）</label><input id="reset-new-password" type="password" class="input" required></div>' +
+        '<div id="reset-error" class="auth-error"></div>' +
+        '<div class="modal-actions"><button class="btn" type="button" onclick="App.closeModal()">取消</button>' +
+          '<button class="btn primary" type="submit">重置密码</button></div>' +
+      "</form>",
+      true
+    );
+  }
+
+  async function resetPassword(event) {
+    event.preventDefault();
+    const result = await Auth.resetPassword(authUsers, {
+      email: document.getElementById("reset-email").value,
+      secondaryPassword: document.getElementById("reset-secondary").value,
+      newPassword: document.getElementById("reset-new-password").value
+    });
+    if (!result.ok) {
+      const el = document.getElementById("reset-error");
+      if (el) el.textContent = result.error;
+      return;
+    }
+    saveAuthUsers();
+    closeModal();
+    toast("密码已重置，请使用新密码登录");
   }
 
   async function ensureDataConnection() {
@@ -1927,6 +1960,7 @@
     logout: logout,
     nextQuestion: nextQuestion,
     openSettings: openSettings,
+    openResetPassword: openResetPassword,
     openResource: openResource,
     openResourceUrl: openResourceUrl,
     openSetupModal: openSetupModal,
@@ -1936,6 +1970,7 @@
     restoreFromFolder: restoreFromFolder,
     revealReviewAnswer: revealReviewAnswer,
     register: register,
+    resetPassword: resetPassword,
     saveSettings: saveSettings,
     searchMockTest: searchMockTest,
     searchOnline: searchOnline,

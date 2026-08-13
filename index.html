@@ -36,6 +36,7 @@
           <form onsubmit="return App.register(event)">
             <input id="auth-register-email" class="input" type="email" placeholder="邮箱" required>
             <input id="auth-register-password" class="input" type="password" placeholder="密码（至少 6 位）" required>
+            <input id="auth-register-secondary" class="input" type="password" inputmode="numeric" maxlength="6" placeholder="二级密码（6 位数字）" required>
             <div id="auth-register-error" class="auth-error"></div>
             <button class="btn primary" type="submit">注册</button>
           </form>

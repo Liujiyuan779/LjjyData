@@ -74,6 +74,9 @@ try {
   if ($dom -match 'id="auth-register-code"') {
     throw "Verification code field should be removed"
   }
+  if ($dom -notmatch 'id="auth-register-secondary"') {
+    throw "Secondary password field was not rendered"
+  }
   if ($dom -notmatch 'id="resource-name"') {
     throw "Resources view was not rendered"
   }

@@ -171,6 +171,7 @@ async function main() {
   await evaluate(
     "document.getElementById('auth-register-email').value='user@example.com';" +
     "document.getElementById('auth-register-password').value='abc123';" +
+    "document.getElementById('auth-register-secondary').value='246810';" +
     "App.register({preventDefault:function(){}});"
   );
   await sleep(600);
@@ -277,6 +278,22 @@ async function main() {
     await evaluate("!localStorage.getItem('kaoyan_auth_session_v1')"),
     "Session should be cleared after logout"
   );
+
+  await evaluate("App.openResetPassword()");
+  await evaluate(
+    "document.getElementById('reset-email').value='user@example.com';" +
+    "document.getElementById('reset-secondary').value='246810';" +
+    "document.getElementById('reset-new-password').value='newpass1';" +
+    "App.resetPassword({preventDefault:function(){}});"
+  );
+  await sleep(400);
+  await evaluate(
+    "document.getElementById('auth-login-email').value='user@example.com';" +
+    "document.getElementById('auth-login-password').value='newpass1';" +
+    "App.login({preventDefault:function(){}});"
+  );
+  await sleep(600);
+  assert(await evaluate("App.isLoggedIn()"), "User should log in with reset password");
 
   console.log("PASS browser interaction test");
 }

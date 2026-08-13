@@ -41,16 +41,23 @@
     if (!input.password || String(input.password).length < 6) {
       return { ok: false, error: "密码至少 6 位" };
     }
+    if (!/^\d{6}$/.test(String(input.secondaryPassword || ""))) {
+      return { ok: false, error: "二级密码必须为 6 位数字" };
+    }
     if (users.some(function (u) { return u.email === email; })) {
       return { ok: false, error: "该邮箱已注册" };
     }
     const salt = randomHex(16);
+    const secondarySalt = randomHex(16);
     const passwordHash = await hashPassword(input.password, salt);
+    const secondaryPasswordHash = await hashPassword(input.secondaryPassword, secondarySalt);
     const user = {
       id: "u_" + Date.now().toString(36) + "_" + randomHex(4),
       email: email,
       salt: salt,
       passwordHash: passwordHash,
+      secondarySalt: secondarySalt,
+      secondaryPasswordHash: secondaryPasswordHash,
       createdAt: new Date().toISOString()
     };
     users.push(user);
@@ -69,6 +76,37 @@
     if (passwordHash !== user.passwordHash) {
       return { ok: false, error: "邮箱或密码错误" };
     }
+    return { ok: true, user: user };
+  }
+
+  async function verifySecondaryPassword(users, input) {
+    const email = normalizeEmail(input.email);
+    const user = users.find(function (u) {
+      return u.email === email;
+    });
+    if (!user) {
+      return { ok: false, error: "该邮箱尚未注册" };
+    }
+    const secondaryPasswordHash = await hashPassword(String(input.secondaryPassword || ""), user.secondarySalt);
+    if (secondaryPasswordHash !== user.secondaryPasswordHash) {
+      return { ok: false, error: "二级密码错误" };
+    }
+    return { ok: true, user: user };
+  }
+
+  async function resetPassword(users, input) {
+    const verified = await verifySecondaryPassword(users, {
+      email: input.email,
+      secondaryPassword: input.secondaryPassword
+    });
+    if (!verified.ok) {
+      return verified;
+    }
+    if (!input.newPassword || String(input.newPassword).length < 6) {
+      return { ok: false, error: "新密码至少 6 位" };
+    }
+    const user = verified.user;
+    user.passwordHash = await hashPassword(input.newPassword, user.salt);
     return { ok: true, user: user };
   }
 
@@ -91,6 +129,8 @@
     isValidSession: isValidSession,
     loginUser: loginUser,
     normalizeEmail: normalizeEmail,
-    registerUser: registerUser
+    registerUser: registerUser,
+    resetPassword: resetPassword,
+    verifySecondaryPassword: verifySecondaryPassword
   };
 });
