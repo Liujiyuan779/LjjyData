@@ -1742,10 +1742,9 @@
         '<div class="section-head"><h2 class="section-title">数据位置</h2></div>' +
         '<p class="muted">当前：' + esc(location) + "</p>" +
         '<div class="modal-actions">' +
-          '<button class="btn" type="button" onclick="App.changeDataFolder()">更换文件夹</button>' +
           '<button class="btn" type="button" onclick="App.backupNow()">备份</button>' +
-          '<button class="btn" type="button" onclick="App.restoreFromFolder()">从文件夹恢复</button>' +
           '<button class="btn" type="button" onclick="App.restoreFromFile()">从 data.json 恢复</button>' +
+          '<button class="btn" type="button" onclick="App.openResetPassword()">重置密码</button>' +
           '<button class="btn danger" type="button" onclick="App.logout()">退出登录</button>' +
           '<button class="btn primary" type="submit">保存设置</button>' +
         "</div>" +

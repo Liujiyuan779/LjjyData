@@ -176,6 +176,10 @@ async function main() {
     await evaluate("!!document.getElementById('reset-email')"),
     "Forgot password modal should open"
   );
+  assert(
+    await evaluate("(function(){var a=document.getElementById('auth-screen');var m=document.querySelector('.modal-backdrop');return parseInt(getComputedStyle(a).zIndex) < parseInt(getComputedStyle(m).zIndex);})()"),
+    "Reset modal should be visible above auth screen"
+  );
   await evaluate("App.closeModal()");
   await evaluate(
     "window.fetch=function(){return Promise.resolve({ok:true,status:200,text:async function(){return '';},json:async function(){return [];},blob:async function(){return new Blob();}});};"
@@ -197,6 +201,21 @@ async function main() {
     await evaluate("!!localStorage.getItem('kaoyan_auth_session_v1')"),
     "Login session should be persisted"
   );
+
+  await evaluate("App.openSettings()");
+  assert(
+    await evaluate("!!document.querySelector('[onclick=\"App.openResetPassword()\"]')"),
+    "Settings should include reset password button"
+  );
+  assert(
+    await evaluate("!document.querySelector('[onclick=\"App.changeDataFolder()\"]')"),
+    "Change folder button should be removed"
+  );
+  assert(
+    await evaluate("!document.querySelector('[onclick=\"App.restoreFromFolder()\"]')"),
+    "Restore from folder button should be removed"
+  );
+  await evaluate("App.closeModal()");
 
   await evaluate("App.openSetupModal()");
   assert(
