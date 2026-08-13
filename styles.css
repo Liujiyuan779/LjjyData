@@ -22,28 +22,6 @@
   --mono: "Cascadia Mono", "Consolas", "Courier New", monospace;
 }
 
-html[data-theme="dark"] {
-  --bg: #101014;
-  --surface: #1a1b21;
-  --surface-2: #202128;
-  --border: #d9d9de;
-  --text: #f4f2ec;
-  --muted: #a9abb4;
-  --accent: #ff4d9d;
-  --accent-strong: #ff9cc6;
-  --accent-soft: #3a2030;
-  --info: #4da3ff;
-  --info-soft: #182a3f;
-  --warning: #ffc62e;
-  --warning-soft: #3b3013;
-  --danger: #ff5b6a;
-  --danger-soft: #3c1d22;
-  --success: #43d68a;
-  --success-soft: #163227;
-  --shadow: 4px 4px 0 rgba(0, 0, 0, 0.7);
-  --shadow-strong: 6px 6px 0 rgba(0, 0, 0, 0.85);
-}
-
 * {
   box-sizing: border-box;
 }

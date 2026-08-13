@@ -29,5 +29,7 @@ assert.ok(fs.existsSync(path.join(root, "electron/main.js")), "electron main sho
 assert.ok(fs.existsSync(path.join(root, "electron/preload.js")), "electron preload should exist");
 assert.ok(fs.existsSync(path.join(root, "electron/fileService.js")), "electron file service should exist");
 assert.ok(!appJs.includes("暂用浏览器存储"), "browser fallback option should be removed from UI");
+assert.ok(!appJs.includes("toggleTheme"), "dark theme toggle should be removed");
+assert.ok(!html.includes('id="theme-toggle"'), "theme toggle button should be removed");
 
 console.log("ALL SHELL TESTS PASSED");

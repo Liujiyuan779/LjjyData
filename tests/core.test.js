@@ -273,13 +273,12 @@ test("createWrongQuestion、removeWrongQuestion、applyWrongReview 操作错题"
 
 test("updateSettings 更新设置和科目", function () {
   const state = { settings: { examDate: "2026-12-19" }, subjects: [] };
-  Core.updateSettings(state, { examDate: "2027-01-01", dailyGoal: 6, theme: "dark" }, [
+  Core.updateSettings(state, { examDate: "2027-01-01", dailyGoal: 6 }, [
     { id: "a", name: "政治", color: "#ff0000" },
     { name: "英语", color: "bad-color" }
   ]);
   assert.strictEqual(state.settings.examDate, "2027-01-01");
   assert.strictEqual(state.settings.dailyGoal, 6);
-  assert.strictEqual(state.settings.theme, "dark");
   assert.strictEqual(state.subjects.length, 2);
   assert.strictEqual(state.subjects[0].name, "政治");
   assert.strictEqual(state.subjects[1].color, "#0f8f79");

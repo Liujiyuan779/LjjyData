@@ -437,24 +437,7 @@
     );
   }
 
-  function applyTheme() {
-    const theme = state.settings.theme === "dark" ? "dark" : "light";
-    document.documentElement.dataset.theme = theme;
-    const btn = document.getElementById("theme-toggle");
-    if (!btn) return;
-    btn.title = theme === "dark" ? "切换到浅色" : "切换到深色";
-    btn.innerHTML = theme === "dark"
-      ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>'
-      : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.9 4.9 1.4 1.4"/><path d="m17.7 17.7 1.4 1.4"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m4.9 19.1 1.4-1.4"/><path d="m17.7 6.3 1.4-1.4"/></svg>';
-  }
-
-  function toggleTheme() {
-    state.settings.theme = state.settings.theme === "dark" ? "light" : "dark";
-    commit();
-  }
-
   function render() {
-    applyTheme();
     renderAuth();
     document.querySelectorAll(".nav-btn").forEach(function (btn) {
       btn.classList.toggle("active", btn.dataset.view === currentView);
@@ -1708,10 +1691,6 @@
       "设置",
       '<form onsubmit="return App.saveSettings(event)">' +
         '<div class="form-grid">' +
-          '<div class="field"><label>界面主题</label><select id="set-theme" class="select">' +
-            '<option value="light"' + (state.settings.theme !== "dark" ? " selected" : "") + ">浅色</option>" +
-            '<option value="dark"' + (state.settings.theme === "dark" ? " selected" : "") + ">深色</option>" +
-          "</select></div>" +
           '<div class="field full"><label>Supabase Project URL</label><input id="set-cloud-url" class="input" value="' +
             esc(cloudConfig ? cloudConfig.url : "") + '" placeholder="https://xxx.supabase.co"></div>' +
           '<div class="field full"><label>Supabase anon public key</label><input id="set-cloud-key" class="input" value="' +
@@ -1799,7 +1778,6 @@
       };
     });
     Core.updateSettings(state, {
-      theme: document.getElementById("set-theme").value,
       examName: document.getElementById("set-exam-name").value.trim() || state.settings.examName,
       examDate: document.getElementById("set-exam-date").value,
       userName: document.getElementById("set-user-name").value.trim() || "缘",
@@ -1927,7 +1905,6 @@
     });
     document.getElementById("settings-btn").addEventListener("click", openSettings);
     document.getElementById("backup-btn").addEventListener("click", backupNow);
-    document.getElementById("theme-toggle").addEventListener("click", toggleTheme);
     window.addEventListener("beforeunload", saveNow);
     document.addEventListener("visibilitychange", function () {
       if (document.visibilityState === "hidden") {
@@ -1999,7 +1976,6 @@
     submitTestScore: submitTestScore,
     toggleWrongDetail: toggleWrongDetail,
     togglePlan: togglePlan,
-    toggleTheme: toggleTheme,
     useLocalFallback: useLocalFallback,
     viewTestResult: viewTestResult
   };

@@ -149,17 +149,13 @@ async function main() {
   await command("Runtime.enable");
   await waitForTrue("typeof window.KaoYanApp === 'object'", 8000);
   assert(
-    await evaluate("document.documentElement.dataset.theme === 'light' || document.documentElement.dataset.theme === 'dark'"),
-    "Theme should be applied"
+    await evaluate("!document.getElementById('theme-toggle')"),
+    "Theme toggle should be removed"
   );
-  await evaluate("App.toggleTheme()");
-  await sleep(500);
   assert(
-    await evaluate("document.documentElement.dataset.theme === 'dark'"),
-    "Dark theme should be applied after toggle"
+    await evaluate("typeof App.toggleTheme === 'undefined'"),
+    "toggleTheme should be removed"
   );
-  const savedTheme = await evaluate("localStorage.getItem('kaoyan_app_local_fallback_v1') || ''");
-  assert(savedTheme.indexOf('"theme": "dark"') >= 0, "Theme choice should be saved");
 
   assert(await evaluate("typeof window.KaoYanApp") === "object", "KaoYanApp should exist");
   assert(await evaluate("typeof window.App") === "object", "window.App should exist");
