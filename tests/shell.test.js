@@ -17,6 +17,7 @@ assert.strictEqual(viewSections.length, 5, "app should have 5 view sections");
 assert.ok(html.includes("core.js"), "core.js should be loaded");
 assert.ok(html.includes("storage.js"), "storage.js should be loaded");
 assert.ok(html.includes("questionBank.js"), "questionBank.js should be loaded");
+assert.ok(html.includes("auth.js"), "auth.js should be loaded");
 assert.ok(html.includes("app.js"), "app.js should be loaded");
 assert.ok(appJs.includes("window.KaoYanApp"), "app.js should expose KaoYanApp");
 assert.ok(appJs.includes("window.App = window.KaoYanApp"), "app.js should expose global App alias");

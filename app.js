@@ -4,11 +4,17 @@
   const Core = window.KaoYanCore;
   const Storage = window.KaoYanStorage;
   const QuestionBank = window.KaoYanQuestionBank;
+  const Auth = window.KaoYanAuth;
   const SAVE_KEY = "kaoyan_app_local_fallback_v1";
   const HANDLE_DB = "kaoyan_handle_db";
   const HANDLE_STORE = "handles";
+  const AUTH_USERS_KEY = "kaoyan_auth_users_v1";
+  const AUTH_SESSION_KEY = "kaoyan_auth_session_v1";
 
   let state = loadFallbackState();
+  let authUsers = loadAuthUsers();
+  let session = loadSession();
+  let pendingCodes = {};
   let currentView = "home";
   let dataDirHandle = null;
   let storageMode = "local";
@@ -27,6 +33,7 @@
   let wrongStatusFilter = "all";
   let reviewQueue = [];
   let reviewIndex = 0;
+  let deferredInstallPrompt = null;
 
   const VIEW_TITLES = {
     home: "首页总览",
@@ -58,6 +65,148 @@
       localStorage.setItem(SAVE_KEY, Core.serializeState(s));
     } catch (err) {
       // storage may be unavailable
+    }
+  }
+
+  function loadAuthUsers() {
+    try {
+      const raw = localStorage.getItem(AUTH_USERS_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (err) {
+      return [];
+    }
+  }
+
+  function saveAuthUsers() {
+    try {
+      localStorage.setItem(AUTH_USERS_KEY, JSON.stringify(authUsers));
+    } catch (err) {
+      // ignore
+    }
+  }
+
+  function loadSession() {
+    try {
+      const raw = localStorage.getItem(AUTH_SESSION_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  function saveSession() {
+    try {
+      if (session) {
+        localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(session));
+      } else {
+        localStorage.removeItem(AUTH_SESSION_KEY);
+      }
+    } catch (err) {
+      // ignore
+    }
+  }
+
+  function setAuthError(view, message) {
+    const el = document.getElementById(view === "register" ? "auth-register-error" : "auth-error");
+    if (el) el.textContent = message || "";
+  }
+
+  function renderAuth() {
+    const el = document.getElementById("auth-screen");
+    if (!el) return;
+    el.classList.toggle("hidden", !!session);
+    if (session) {
+      setAuthError("login", "");
+      setAuthError("register", "");
+    }
+  }
+
+  function showLogin() {
+    document.getElementById("auth-login-view").classList.remove("hidden");
+    document.getElementById("auth-register-view").classList.add("hidden");
+    setAuthError("login", "");
+    setAuthError("register", "");
+  }
+
+  function showRegister() {
+    document.getElementById("auth-login-view").classList.add("hidden");
+    document.getElementById("auth-register-view").classList.remove("hidden");
+    setAuthError("login", "");
+    setAuthError("register", "");
+  }
+
+  function requestVerificationCode() {
+    const email = document.getElementById("auth-register-email").value.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setAuthError("register", "请输入有效邮箱");
+      return;
+    }
+    const code = Auth.generateVerificationCode();
+    pendingCodes[Auth.normalizeEmail(email)] = {
+      code: code,
+      expiresAt: Date.now() + 5 * 60 * 1000
+    };
+    const display = document.getElementById("auth-code-display");
+    if (display) {
+      display.textContent = "验证码：" + code + "（演示环境未发送邮件）";
+    }
+    setAuthError("register", "");
+  }
+
+  async function register(event) {
+    event.preventDefault();
+    const result = await Auth.registerUser(authUsers, {
+      email: document.getElementById("auth-register-email").value,
+      password: document.getElementById("auth-register-password").value,
+      code: document.getElementById("auth-register-code").value
+    }, pendingCodes);
+    if (!result.ok) {
+      setAuthError("register", result.error);
+      return;
+    }
+    saveAuthUsers();
+    session = Auth.createSession(result.user);
+    saveSession();
+    renderAuth();
+    await ensureDataConnection();
+  }
+
+  async function login(event) {
+    event.preventDefault();
+    const result = await Auth.loginUser(authUsers, {
+      email: document.getElementById("auth-login-email").value,
+      password: document.getElementById("auth-login-password").value
+    });
+    if (!result.ok) {
+      setAuthError("login", result.error);
+      return;
+    }
+    session = Auth.createSession(result.user);
+    saveSession();
+    renderAuth();
+    await ensureDataConnection();
+  }
+
+  function logout() {
+    session = null;
+    saveSession();
+    closeModal();
+    renderAuth();
+  }
+
+  async function ensureDataConnection() {
+    let savedHandle = null;
+    try {
+      savedHandle = await loadHandle();
+    } catch (err) {
+      // ignore, show setup modal below
+    }
+    if (savedHandle) {
+      await connectToHandle(savedHandle);
+    } else if (Storage.isSupported()) {
+      openSetupModal();
+    } else {
+      toast("当前环境不支持本地文件夹，已使用浏览器内置存储");
     }
   }
 
@@ -255,6 +404,7 @@
 
   function render() {
     applyTheme();
+    renderAuth();
     document.querySelectorAll(".nav-btn").forEach(function (btn) {
       btn.classList.toggle("active", btn.dataset.view === currentView);
     });
@@ -1500,6 +1650,7 @@
           '<button class="btn" type="button" onclick="App.backupNow()">备份</button>' +
           '<button class="btn" type="button" onclick="App.restoreFromFolder()">从文件夹恢复</button>' +
           '<button class="btn" type="button" onclick="App.restoreFromFile()">从 data.json 恢复</button>' +
+          '<button class="btn danger" type="button" onclick="App.logout()">退出登录</button>' +
           '<button class="btn primary" type="submit">保存设置</button>' +
         "</div>" +
       "</form>",
@@ -1673,18 +1824,8 @@
     });
     render();
 
-    let savedHandle = null;
-    try {
-      savedHandle = await loadHandle();
-    } catch (err) {
-      // ignore, show setup modal below
-    }
-    if (savedHandle) {
-      await connectToHandle(savedHandle);
-    } else if (Storage.isSupported()) {
-      openSetupModal();
-    } else {
-      toast("当前浏览器不支持本地文件夹，已使用浏览器内置存储");
+    if (session) {
+      await ensureDataConnection();
     }
   }
 
@@ -1710,6 +1851,11 @@
     generateMockTest: generateMockTest,
     gradeReview: gradeReview,
     importMockTest: importMockTest,
+    isLoggedIn: function () {
+      return !!session;
+    },
+    login: login,
+    logout: logout,
     nextQuestion: nextQuestion,
     openSettings: openSettings,
     openResource: openResource,
@@ -1720,6 +1866,8 @@
     restoreFromFile: restoreFromFile,
     restoreFromFolder: restoreFromFolder,
     revealReviewAnswer: revealReviewAnswer,
+    register: register,
+    requestVerificationCode: requestVerificationCode,
     saveSettings: saveSettings,
     searchMockTest: searchMockTest,
     searchOnline: searchOnline,
@@ -1731,6 +1879,8 @@
     setWrongStatus: setWrongStatus,
     setWrongSubject: setWrongSubject,
     setView: setView,
+    showLogin: showLogin,
+    showRegister: showRegister,
     shiftPlanDate: shiftPlanDate,
     startTest: startTest,
     startReview: startReview,

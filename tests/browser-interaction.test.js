@@ -167,6 +167,35 @@ async function main() {
   assert(await evaluate("typeof App.useLocalFallback") === "function", "useLocalFallback should exist");
   assert(await evaluate("typeof App.chooseDataFolder") === "function", "chooseDataFolder should exist");
 
+  assert(
+    await evaluate("!document.getElementById('auth-screen').classList.contains('hidden')"),
+    "Auth screen should show before login"
+  );
+  await evaluate("App.showRegister()");
+  await evaluate(
+    "document.getElementById('auth-register-email').value='user@example.com';" +
+    "document.getElementById('auth-register-password').value='abc123';" +
+    "App.requestVerificationCode();"
+  );
+  const verificationCode = await evaluate(
+    "(function(){var el=document.getElementById('auth-code-display');var m=(el.textContent||'').match(/\\d{6}/);return m?m[0]:'';})()"
+  );
+  assert(verificationCode.length === 6, "Verification code should be shown");
+  await evaluate(
+    "document.getElementById('auth-register-code').value='" + verificationCode + "';" +
+    "App.register({preventDefault:function(){}});"
+  );
+  await sleep(600);
+  assert(await evaluate("App.isLoggedIn()"), "User should stay logged in after register");
+  assert(
+    await evaluate("document.getElementById('auth-screen').classList.contains('hidden')"),
+    "Auth screen should hide after login"
+  );
+  assert(
+    await evaluate("!!localStorage.getItem('kaoyan_auth_session_v1')"),
+    "Login session should be persisted"
+  );
+
   await evaluate("App.openSetupModal()");
   assert(
     await evaluate("!document.querySelector('[onclick=\"App.useLocalFallback()\"]')"),
@@ -248,6 +277,18 @@ async function main() {
   );
   const openedUrl = await evaluate("window.__openedUrl || ''");
   assert(openedUrl.indexOf("https://www.bing.com/search?q=") === 0, "Search should open Bing URL");
+
+  await evaluate("App.logout()");
+  await sleep(200);
+  assert(
+    await evaluate("!document.getElementById('auth-screen').classList.contains('hidden')"),
+    "Auth screen should show after logout"
+  );
+  assert(await evaluate("App.isLoggedIn() === false"), "User should be logged out");
+  assert(
+    await evaluate("!localStorage.getItem('kaoyan_auth_session_v1')"),
+    "Session should be cleared after logout"
+  );
 
   console.log("PASS browser interaction test");
 }

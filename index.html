@@ -8,6 +8,48 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <div id="auth-screen">
+    <div class="auth-wrap">
+      <div class="auth-card">
+        <div class="auth-brand">
+          <span class="brand-mark">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 2s6 5 6 11a6 6 0 0 1-12 0c0-3 2-5 3-6 1 1 2 1 3 0-1-2-2-3-2-5Z"/>
+            </svg>
+          </span>
+          <span>缘的考研舱</span>
+        </div>
+
+        <div id="auth-login-view">
+          <h2>登录</h2>
+          <form onsubmit="return App.login(event)">
+            <input id="auth-login-email" class="input" type="email" placeholder="邮箱" required>
+            <input id="auth-login-password" class="input" type="password" placeholder="密码" required>
+            <div id="auth-error" class="auth-error"></div>
+            <button class="btn primary" type="submit">登录</button>
+          </form>
+          <div class="auth-switch">还没有账号？<a onclick="App.showRegister()">注册</a></div>
+        </div>
+
+        <div id="auth-register-view" class="hidden">
+          <h2>注册</h2>
+          <form onsubmit="return App.register(event)">
+            <input id="auth-register-email" class="input" type="email" placeholder="邮箱" required>
+            <input id="auth-register-password" class="input" type="password" placeholder="密码（至少 6 位）" required>
+            <div class="auth-code-row">
+              <input id="auth-register-code" class="input" placeholder="验证码" required>
+              <button class="btn small" type="button" onclick="App.requestVerificationCode()">获取验证码</button>
+            </div>
+            <div id="auth-code-display" class="auth-code-display"></div>
+            <div id="auth-register-error" class="auth-error"></div>
+            <button class="btn primary" type="submit">注册</button>
+          </form>
+          <div class="auth-switch">已有账号？<a onclick="App.showLogin()">返回登录</a></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="app">
     <aside class="sidebar">
       <div class="brand">
@@ -104,6 +146,7 @@
   <script src="core.js"></script>
   <script src="storage.js"></script>
   <script src="questionBank.js"></script>
+  <script src="auth.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

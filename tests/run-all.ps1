@@ -7,6 +7,12 @@ if ($LASTEXITCODE -ne 0) {
   throw "Core tests failed"
 }
 
+Write-Host "== Running auth tests =="
+& node (Join-Path $PSScriptRoot "auth.test.js")
+if ($LASTEXITCODE -ne 0) {
+  throw "Auth tests failed"
+}
+
 Write-Host "== Running storage tests =="
 & node (Join-Path $PSScriptRoot "storage.test.js")
 if ($LASTEXITCODE -ne 0) {
@@ -55,6 +61,12 @@ Write-Host "== Checking questionBank.js syntax =="
 & node --check (Join-Path $root "questionBank.js")
 if ($LASTEXITCODE -ne 0) {
   throw "questionBank.js syntax check failed"
+}
+
+Write-Host "== Checking auth.js syntax =="
+& node --check (Join-Path $root "auth.js")
+if ($LASTEXITCODE -ne 0) {
+  throw "auth.js syntax check failed"
 }
 
 Write-Host "== Running shell tests =="
