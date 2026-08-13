@@ -137,6 +137,7 @@
       openCloudSetupModal();
       return;
     }
+    await syncCloudUsers();
     try {
       const cloudState = await Cloud.loadState(cloudConfig, session.email);
       if (cloudState) {
@@ -146,6 +147,19 @@
       toast("云数据已连接");
     } catch (err) {
       toast("云数据加载失败：" + err.message);
+    }
+  }
+
+  async function syncCloudUsers() {
+    if (!cloudConfig || !Cloud.isConfigured(cloudConfig)) return;
+    try {
+      const users = await Cloud.loadUsers(cloudConfig);
+      if (Array.isArray(users)) {
+        authUsers = users;
+        saveAuthUsers();
+      }
+    } catch (err) {
+      toast("云用户加载失败：" + err.message);
     }
   }
 
@@ -180,6 +194,7 @@
 
   async function register(event) {
     event.preventDefault();
+    await syncCloudUsers();
     const result = await Auth.registerUser(authUsers, {
       email: document.getElementById("auth-register-email").value,
       password: document.getElementById("auth-register-password").value,
@@ -190,6 +205,13 @@
       return;
     }
     saveAuthUsers();
+    if (cloudConfig && Cloud.isConfigured(cloudConfig)) {
+      try {
+        await Cloud.saveUsers(cloudConfig, authUsers);
+      } catch (err) {
+        toast("用户账号云保存失败：" + err.message);
+      }
+    }
     session = Auth.createSession(result.user);
     saveSession();
     renderAuth();
@@ -198,6 +220,7 @@
 
   async function login(event) {
     event.preventDefault();
+    await syncCloudUsers();
     const result = await Auth.loginUser(authUsers, {
       email: document.getElementById("auth-login-email").value,
       password: document.getElementById("auth-login-password").value
@@ -236,6 +259,7 @@
 
   async function resetPassword(event) {
     event.preventDefault();
+    await syncCloudUsers();
     const result = await Auth.resetPassword(authUsers, {
       email: document.getElementById("reset-email").value,
       secondaryPassword: document.getElementById("reset-secondary").value,
@@ -247,6 +271,13 @@
       return;
     }
     saveAuthUsers();
+    if (cloudConfig && Cloud.isConfigured(cloudConfig)) {
+      try {
+        await Cloud.saveUsers(cloudConfig, authUsers);
+      } catch (err) {
+        toast("用户账号云保存失败：" + err.message);
+      }
+    }
     closeModal();
     toast("密码已重置，请使用新密码登录");
   }

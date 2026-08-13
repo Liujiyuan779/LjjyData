@@ -67,6 +67,18 @@ test("loadState 返回第一条数据的 data", async function () {
   assert.strictEqual(data.version, 2);
 });
 
+test("saveUsers/loadUsers 将用户账号存入云数据库", async function () {
+  mockFetch(function (url, options) {
+    if (options.method === "POST") {
+      return Promise.resolve(fakeResponse(201, ""));
+    }
+    return Promise.resolve(fakeResponse(200, JSON.stringify([{ data: { users: [{ id: "u1" }] } }])));
+  });
+  await Cloud.saveUsers(config, [{ id: "u1" }]);
+  const users = await Cloud.loadUsers(config);
+  assert.strictEqual(users[0].id, "u1");
+});
+
 test("resourcePath 包含用户和文件名", function () {
   assert.strictEqual(Cloud.resourcePath("user@example.com", "a/b.pdf"), "user%40example.com/a_b.pdf");
 });

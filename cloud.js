@@ -74,6 +74,15 @@
     return rows && rows.length ? rows[0].data : null;
   }
 
+  async function saveUsers(config, users) {
+    await saveState(config, "__auth_users__", { users: users });
+  }
+
+  async function loadUsers(config) {
+    const data = await loadState(config, "__auth_users__");
+    return data && Array.isArray(data.users) ? data.users : null;
+  }
+
   function resourcePath(userKey, fileName) {
     const safeName = String(fileName || "file").replace(/[\\/:*?"<>|]/g, "_");
     return encodeURIComponent(userKey) + "/" + encodeURIComponent(safeName);
@@ -124,10 +133,12 @@
     downloadResource: downloadResource,
     getDefaultConfig: getDefaultConfig,
     isConfigured: isConfigured,
+    loadUsers: loadUsers,
     loadState: loadState,
     normalizeUrl: normalizeUrl,
     resourcePath: resourcePath,
     saveState: saveState,
+    saveUsers: saveUsers,
     uploadResource: uploadResource
   };
 });
